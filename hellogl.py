@@ -159,7 +159,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.qglClearColor(self.trolltechPurple.darker())
         #self.object = self.makeObject()
         self.object = self.makeGrid()
-        GL.glShadeModel(GL.GL_FLAT)
+        GL.glShadeModel(GL.GL_SMOOTH)
         #GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glEnable(GL.GL_CULL_FACE)
         GL.glEnable(GL.GL_LIGHTING)
