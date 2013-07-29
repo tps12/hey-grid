@@ -168,6 +168,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def paintGL(self):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         GL.glLoadIdentity()
+        GL.glLightfv(GL.GL_LIGHT0, GL.GL_POSITION, (10, -10, -20, 0))
         GL.glTranslated(0.0, 0.0, -10.0)
         GL.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
         GL.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
@@ -193,7 +194,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         if event.buttons() & QtCore.Qt.LeftButton:
             self.setXRotation(self.xRot + 8 * dy)
-            self.setYRotation(self.yRot + 8 * dx)
+            self.setYRotation(self.yRot - 8 * dx)
         elif event.buttons() & QtCore.Qt.RightButton:
             self.setXRotation(self.xRot + 8 * dy)
             self.setZRotation(self.zRot + 8 * dx)
@@ -306,20 +307,16 @@ class GLWidget(QtOpenGL.QGLWidget):
         genList = GL.glGenLists(1)
         GL.glNewList(genList, GL.GL_COMPILE)
 
-        GL.glLightfv(GL.GL_LIGHT0, GL.GL_POSITION, (20, 20, 10, 10))
         GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, (0, 0.8, 0.8, 1))
         for t in grid.tiles:
             GL.glBegin(GL.GL_TRIANGLE_FAN)
             n = self.normal(t.v)
             GL.glNormal3d(*n)
-            print n
             GL.glVertex3d(*t.v)
-            invert = True
             for c in t.corners:
-                GL.glNormal3d(*n)#(self.invert(n) if invert else n))
-                invert = not invert
+                GL.glNormal3d(*n)
                 GL.glVertex3d(*c.v)
-            GL.glNormal3d(*(self.invert(n) if invert else n))
+            GL.glNormal3d(*n)
             GL.glVertex3d(*t.corners[0].v)
             GL.glEnd()
 
