@@ -301,6 +301,57 @@ class GLWidget(QtOpenGL.QGLWidget):
                     next_edge_id += 1
         return grid
 
+#Grid* _subdivided_grid (Grid* prev) {
+#	Grid* grid = new Grid(prev->size + 1);
+#
+#	int prev_tile_count = prev->tiles.size();
+#	int prev_corner_count = prev->corners.size();
+#	
+#	//old tiles
+#	for (int i=0; i<prev_tile_count; i++) {
+#		grid->tiles[i].v = prev->tiles[i].v;
+#		for (int k=0; k<grid->tiles[i].edge_count; k++) {
+#			grid->tiles[i].tiles[k] = &grid->tiles[prev->tiles[i].corners[k]->id+prev_tile_count];
+#		}
+#	}
+#	//old corners become tiles
+#	for (int i=0; i<prev_corner_count; i++) {
+#		grid->tiles[i+prev_tile_count].v = prev->corners[i].v;
+#		for (int k=0; k<3; k++) {
+#			grid->tiles[i+prev_tile_count].tiles[2*k] = &grid->tiles[prev->corners[i].corners[k]->id+prev_tile_count];
+#			grid->tiles[i+prev_tile_count].tiles[2*k+1] = &grid->tiles[prev->corners[i].tiles[k]->id];
+#		}
+#	}
+#	//new corners
+#	int next_corner_id = 0;
+#	for (const Tile& n : prev->tiles) {
+#		const Tile& t = grid->tiles[n.id];
+#		for (int k=0; k<t.edge_count; k++) {
+#			_add_corner(next_corner_id, grid, t.id, t.tiles[(k+t.edge_count-1)%t.edge_count]->id, t.tiles[k]->id);
+#			next_corner_id++;
+#		}
+#	}
+#	//connect corners
+#	for (Corner& c : grid->corners) {
+#		for (int k=0; k<3; k++) {
+#			c.corners[k] = c.tiles[k]->corners[(position(c.tiles[k], &c)+1)%(c.tiles[k]->edge_count)];
+#		}
+#	}
+#	//new edges
+#	int next_edge_id = 0;
+#	for (Tile& t : grid->tiles) {
+#		for (int k=0; k<t.edge_count; k++) {
+#			if (t.edges[k] == nullptr) {
+#				_add_edge(next_edge_id, grid, t.id, t.tiles[k]->id);
+#				next_edge_id++;
+#			}
+#		}
+#	}
+#	
+#	delete prev;
+#	return grid;
+#}
+
     def makeGrid(self):
         grid = self.size_0_grid()
 
