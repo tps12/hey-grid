@@ -345,6 +345,30 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 		return grid
 
+	# makes a spherical grid "subdivided" the given number of times
+	#
+	# a size 0 grid is a dodecahedron, and each subsequent size is the result
+	# of taking the previous size and turning each vertex into a face
+	#
+	# therefore, the number of faces for a given sized grid is:
+	#
+	# >>> def f(i):
+	# ...     return 12 if i == 0 else f(i-1) + v(f(i-1))
+	#
+	# where
+	#
+	# >>> def v(f):
+	# ...     p = 12 # number of pentagons is fixed at 12
+	# ...     h = f - p # everything else is a hexagon
+	# ...     return p * 5/3 + h * 2
+	#
+	# a rectangular grid with approximate size of 2 degrees on a side provides
+	# 10,316 tiles, a little more than the 7,292 provided by a size 6 hex grid
+	# and well below the 21,872 provided by a size 7
+	#
+	# an earth-sized sphere divided into a grid of size 29
+	# (686,303,773,648,832 tiles!) provides an average tile size of
+	# 0.743 m^2 and around a linear meter between adjacent tiles
 	def grid(self, size):
 		return self.grid0() if size == 0 else self._subgrid(self.grid(size-1))
 
