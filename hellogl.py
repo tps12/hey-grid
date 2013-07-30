@@ -378,8 +378,10 @@ class GLWidget(QtOpenGL.QGLWidget):
 		genList = GL.glGenLists(1)
 		GL.glNewList(genList, GL.GL_COMPILE)
 
-		GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, (0, 0.8, 0.8, 1))
+                cyan = (0, 1, 1, 1)
+                red = (1, 0, 0, 1)
 		for t in grid.tiles:
+                        GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, red if len(t.corners) == 5 else cyan)
 			GL.glBegin(GL.GL_TRIANGLE_FAN)
 			n = self.normal(t.v)
 			GL.glNormal3d(*n)
