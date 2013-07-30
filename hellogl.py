@@ -65,6 +65,7 @@ class Tile(object):
 		self.tiles = self.edge_count * [None]
 		self.corners = self.edge_count * [None]
 		self.edges = self.edge_count * [None]
+                self.generation = None
 
 class Corner(object):
 	def __init__(self, id):
@@ -272,6 +273,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 		]
 		
 		for t in grid.tiles:
+                                t.generation = 0
 				t.v = icos_tiles[t.id]
 				for k in range(5):
 					t.tiles[k] = grid.tiles[icos_tiles_n[t.id][k]]
@@ -312,6 +314,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 		# old tiles
 		for i in range(prev_tile_count):
 			grid.tiles[i].v = prev.tiles[i].v
+                        grid.tiles[i].generation = prev.tiles[i].generation
 			for k in range(grid.tiles[i].edge_count):
 				grid.tiles[i].tiles[k] = grid.tiles[prev.tiles[i].corners[k].id + prev_tile_count]
 
@@ -338,6 +341,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 		# new edges
 		next_edge_id = 0
 		for t in grid.tiles:
+                        if t.generation is None:
+                            t.generation = prev.tiles[-1].generation + 1
 			for k in range(t.edge_count):
 				if t.edges[k] is None:
 					self._add_edge(next_edge_id, grid, t.id, t.tiles[k].id)
@@ -379,9 +384,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glNewList(genList, GL.GL_COMPILE)
 
                 cyan = (0, 1, 1, 1)
+                gray = (0.5, 0.5, 0.5, 1)
                 red = (1, 0, 0, 1)
 		for t in grid.tiles:
-                        GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, red if len(t.corners) == 5 else cyan)
+                        color = red if t.generation == 0 else (gray if (t.generation % 2) == 0 else cyan)
+                        GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, color)
 			GL.glBegin(GL.GL_TRIANGLE_FAN)
 			n = self.normal(t.v)
 			GL.glNormal3d(*n)
