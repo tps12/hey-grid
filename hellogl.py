@@ -391,10 +391,12 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glNewList(genList, GL.GL_COMPILE)
 
                 cyan = (0, 1, 1, 1)
+                green = (0, 1, 0, 1)
                 gray = (0.5, 0.5, 0.5, 1)
                 red = (1, 0, 0, 1)
 		for t in grid.tiles:
                         color = red if t.generation == 0 else (gray if (t.generation % 2) == 0 else cyan)
+                        color = green if t == grid.tiles[4] else color
                         GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, color)
 			GL.glBegin(GL.GL_TRIANGLE_FAN)
 			n = Grid.normal(t.v)
