@@ -292,7 +292,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 		self._rotationoffset = rotationoffset
 		self.object = 0
 		self.xRot = 0
-		self.yRot = self._rotationoffset
+		self.yRot = self._rotationoffset * 16
 		self.zRot = 0
 
 		self.lastPos = QtCore.QPoint()
@@ -300,40 +300,16 @@ class GLWidget(QtOpenGL.QGLWidget):
 		self.trolltechGreen = QtGui.QColor.fromCmykF(0.40, 0.0, 1.0, 0.0)
 		self.trolltechPurple = QtGui.QColor.fromCmykF(0.39, 0.39, 0.0, 0.0)
 
-	def xRotation(self):
-		return self.xRot
-
-	def yRotation(self):
-		return self.yRot
-
-	def zRotation(self):
-		return self.zRot
-
 	def minimumSizeHint(self):
 		return QtCore.QSize(50, 50)
 
 	def sizeHint(self):
 		return QtCore.QSize(400, 400)
 
-	def setXRotation(self, angle):
-		angle = self.normalizeAngle(angle)
-		if angle != self.xRot:
-			self.xRot = angle
-			self.emit(QtCore.SIGNAL("xRotationChanged(int)"), angle)
-			self.updateGL()
-
-	def setYRotation(self, angle):
-		angle = self.normalizeAngle(angle + self._rotationoffset)
+	def rotate(self, angle):
+		angle = self.normalizeAngle((angle + self._rotationoffset) * 16)
 		if angle != self.yRot:
 			self.yRot = angle
-			self.emit(QtCore.SIGNAL("yRotationChanged(int)"), angle)
-			self.updateGL()
-
-	def setZRotation(self, angle):
-		angle = self.normalizeAngle(angle)
-		if angle != self.zRot:
-			self.zRot = angle
-			self.emit(QtCore.SIGNAL("zRotationChanged(int)"), angle)
 			self.updateGL()
 
 	def initializeGL(self):
@@ -367,22 +343,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glLoadIdentity()
 		GL.glOrtho(-1.1, 1.1, 1.1, -1.1, 0, 11)
 		GL.glMatrixMode(GL.GL_MODELVIEW)
-
-	def mousePressEvent(self, event):
-		self.lastPos = QtCore.QPoint(event.pos())
-
-	def mouseMoveEvent(self, event):
-		dx = event.x() - self.lastPos.x()
-		dy = event.y() - self.lastPos.y()
-
-		if event.buttons() & QtCore.Qt.LeftButton:
-			self.setXRotation(self.xRot + 8 * dy)
-			self.setYRotation(self.yRot - 8 * dx)
-		elif event.buttons() & QtCore.Qt.RightButton:
-			self.setXRotation(self.xRot + 8 * dy)
-			self.setZRotation(self.zRot + 8 * dx)
-
-		self.lastPos = QtCore.QPoint(event.pos())
 
 	def makeGrid(self):
 		grid = Grid.grid(2)

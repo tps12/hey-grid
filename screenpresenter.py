@@ -23,4 +23,4 @@ class ScreenPresenter(object):
 
     def rotate(self, value):
 		for v in self._views:
-			v.setYRotation(value * 16)
+			v.rotate(value)
