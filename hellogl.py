@@ -167,11 +167,14 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glEnable(GL.GL_CULL_FACE)
 		GL.glEnable(GL.GL_LIGHTING)
 		GL.glEnable(GL.GL_LIGHT0)
+		GL.glEnable(GL.GL_LIGHT1)
 
 	def paintGL(self):
 		GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 		GL.glLoadIdentity()
-		GL.glLightfv(GL.GL_LIGHT0, GL.GL_POSITION, (10, -10, -20, 0))
+		GL.glLightfv(GL.GL_LIGHT0, GL.GL_POSITION, (20, -10, -20, 0))
+		GL.glLightfv(GL.GL_LIGHT1, GL.GL_DIFFUSE, (0.25, 0.25, 0.25, 1))
+		GL.glLightfv(GL.GL_LIGHT1, GL.GL_POSITION, (-10, -5, -20, 0))
 		GL.glTranslated(0.0, 0.0, -10.0)
 		GL.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
 		GL.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
@@ -378,7 +381,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 		return self.grid0() if size == 0 else self._subgrid(self.grid(size-1))
 
 	def makeGrid(self):
-		grid = self.grid(8)
+		grid = self.grid(2)
 
 		genList = GL.glGenLists(1)
 		GL.glNewList(genList, GL.GL_COMPILE)
