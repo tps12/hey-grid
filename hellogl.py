@@ -108,104 +108,6 @@ class Grid(object):
 	def edge_count(size):
 		return 30*pow(3,size)
 
-class GLWidget(QtOpenGL.QGLWidget):
-	def __init__(self, parent=None):
-		QtOpenGL.QGLWidget.__init__(self, parent)
-
-		self.object = 0
-		self.xRot = 0
-		self.yRot = 0
-		self.zRot = 0
-
-		self.lastPos = QtCore.QPoint()
-
-		self.trolltechGreen = QtGui.QColor.fromCmykF(0.40, 0.0, 1.0, 0.0)
-		self.trolltechPurple = QtGui.QColor.fromCmykF(0.39, 0.39, 0.0, 0.0)
-
-	def xRotation(self):
-		return self.xRot
-
-	def yRotation(self):
-		return self.yRot
-
-	def zRotation(self):
-		return self.zRot
-
-	def minimumSizeHint(self):
-		return QtCore.QSize(50, 50)
-
-	def sizeHint(self):
-		return QtCore.QSize(400, 400)
-
-	def setXRotation(self, angle):
-		angle = self.normalizeAngle(angle)
-		if angle != self.xRot:
-			self.xRot = angle
-			self.emit(QtCore.SIGNAL("xRotationChanged(int)"), angle)
-			self.updateGL()
-
-	def setYRotation(self, angle):
-		angle = self.normalizeAngle(angle)
-		if angle != self.yRot:
-			self.yRot = angle
-			self.emit(QtCore.SIGNAL("yRotationChanged(int)"), angle)
-			self.updateGL()
-
-	def setZRotation(self, angle):
-		angle = self.normalizeAngle(angle)
-		if angle != self.zRot:
-			self.zRot = angle
-			self.emit(QtCore.SIGNAL("zRotationChanged(int)"), angle)
-			self.updateGL()
-
-	def initializeGL(self):
-		self.qglClearColor(self.trolltechPurple.darker())
-		#self.object = self.makeObject()
-		self.object = self.makeGrid()
-		GL.glShadeModel(GL.GL_SMOOTH)
-		#GL.glEnable(GL.GL_DEPTH_TEST)
-		GL.glEnable(GL.GL_CULL_FACE)
-		GL.glEnable(GL.GL_LIGHTING)
-		GL.glEnable(GL.GL_LIGHT0)
-		GL.glEnable(GL.GL_LIGHT1)
-
-	def paintGL(self):
-		GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-		GL.glLoadIdentity()
-		GL.glLightfv(GL.GL_LIGHT0, GL.GL_POSITION, (20, -10, -20, 0))
-		GL.glLightfv(GL.GL_LIGHT1, GL.GL_DIFFUSE, (0.25, 0.25, 0.25, 1))
-		GL.glLightfv(GL.GL_LIGHT1, GL.GL_POSITION, (-10, -5, -20, 0))
-		GL.glTranslated(0.0, 0.0, -10.0)
-		GL.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
-		GL.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
-		GL.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
-		GL.glCallList(self.object)
-
-	def resizeGL(self, width, height):
-		side = min(width, height)
-		GL.glViewport((width - side) / 2, (height - side) / 2, side, side)
-
-		GL.glMatrixMode(GL.GL_PROJECTION)
-		GL.glLoadIdentity()
-		GL.glOrtho(-1.1, 1.1, 1.1, -1.1, 0, 11)
-		GL.glMatrixMode(GL.GL_MODELVIEW)
-
-	def mousePressEvent(self, event):
-		self.lastPos = QtCore.QPoint(event.pos())
-
-	def mouseMoveEvent(self, event):
-		dx = event.x() - self.lastPos.x()
-		dy = event.y() - self.lastPos.y()
-
-		if event.buttons() & QtCore.Qt.LeftButton:
-			self.setXRotation(self.xRot + 8 * dy)
-			self.setYRotation(self.yRot - 8 * dx)
-		elif event.buttons() & QtCore.Qt.RightButton:
-			self.setXRotation(self.xRot + 8 * dy)
-			self.setZRotation(self.zRot + 8 * dx)
-
-		self.lastPos = QtCore.QPoint(event.pos())
-
 	@classmethod
 	def squared_length(cls, v):
 		return sum([vi * vi for vi in v])
@@ -256,6 +158,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 					return i
 		return -1
 
+	@classmethod
 	def grid0(self):
 		grid = Grid(0)
 
@@ -307,6 +210,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 						next_edge_id += 1
 		return grid
 
+	@classmethod
 	def _subgrid(self, prev):
 		grid = Grid(prev.size + 1)
 
@@ -376,11 +280,112 @@ class GLWidget(QtOpenGL.QGLWidget):
 	# an earth-sized sphere divided into a grid of size 29
 	# (686,303,773,648,832 tiles!) provides an average tile size of
 	# 0.743 m^2 and around a linear meter between adjacent tiles
+	@classmethod
 	def grid(self, size):
 		return self.grid0() if size == 0 else self._subgrid(self.grid(size-1))
 
+class GLWidget(QtOpenGL.QGLWidget):
+	def __init__(self, grid, rotationoffset, parent=None):
+		QtOpenGL.QGLWidget.__init__(self, parent)
+
+		self.grid = grid
+		self._rotationoffset = rotationoffset
+		self.object = 0
+		self.xRot = 0
+		self.yRot = self._rotationoffset
+		self.zRot = 0
+
+		self.lastPos = QtCore.QPoint()
+
+		self.trolltechGreen = QtGui.QColor.fromCmykF(0.40, 0.0, 1.0, 0.0)
+		self.trolltechPurple = QtGui.QColor.fromCmykF(0.39, 0.39, 0.0, 0.0)
+
+	def xRotation(self):
+		return self.xRot
+
+	def yRotation(self):
+		return self.yRot
+
+	def zRotation(self):
+		return self.zRot
+
+	def minimumSizeHint(self):
+		return QtCore.QSize(50, 50)
+
+	def sizeHint(self):
+		return QtCore.QSize(400, 400)
+
+	def setXRotation(self, angle):
+		angle = self.normalizeAngle(angle)
+		if angle != self.xRot:
+			self.xRot = angle
+			self.emit(QtCore.SIGNAL("xRotationChanged(int)"), angle)
+			self.updateGL()
+
+	def setYRotation(self, angle):
+		angle = self.normalizeAngle(angle + self._rotationoffset)
+		if angle != self.yRot:
+			self.yRot = angle
+			self.emit(QtCore.SIGNAL("yRotationChanged(int)"), angle)
+			self.updateGL()
+
+	def setZRotation(self, angle):
+		angle = self.normalizeAngle(angle)
+		if angle != self.zRot:
+			self.zRot = angle
+			self.emit(QtCore.SIGNAL("zRotationChanged(int)"), angle)
+			self.updateGL()
+
+	def initializeGL(self):
+		self.qglClearColor(self.trolltechPurple.darker())
+		#self.object = self.makeObject()
+		self.object = self.makeGrid()
+		GL.glShadeModel(GL.GL_SMOOTH)
+		#GL.glEnable(GL.GL_DEPTH_TEST)
+		GL.glEnable(GL.GL_CULL_FACE)
+		GL.glEnable(GL.GL_LIGHTING)
+		GL.glEnable(GL.GL_LIGHT0)
+		GL.glEnable(GL.GL_LIGHT1)
+
+	def paintGL(self):
+		GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+		GL.glLoadIdentity()
+		GL.glLightfv(GL.GL_LIGHT0, GL.GL_POSITION, (20, -10, -20, 0))
+		GL.glLightfv(GL.GL_LIGHT1, GL.GL_DIFFUSE, (0.25, 0.25, 0.25, 1))
+		GL.glLightfv(GL.GL_LIGHT1, GL.GL_POSITION, (-10, -5, -20, 0))
+		GL.glTranslated(0.0, 0.0, -10.0)
+		GL.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
+		GL.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
+		GL.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
+		GL.glCallList(self.object)
+
+	def resizeGL(self, width, height):
+		side = min(width, height)
+		GL.glViewport((width - side) / 2, (height - side) / 2, side, side)
+
+		GL.glMatrixMode(GL.GL_PROJECTION)
+		GL.glLoadIdentity()
+		GL.glOrtho(-1.1, 1.1, 1.1, -1.1, 0, 11)
+		GL.glMatrixMode(GL.GL_MODELVIEW)
+
+	def mousePressEvent(self, event):
+		self.lastPos = QtCore.QPoint(event.pos())
+
+	def mouseMoveEvent(self, event):
+		dx = event.x() - self.lastPos.x()
+		dy = event.y() - self.lastPos.y()
+
+		if event.buttons() & QtCore.Qt.LeftButton:
+			self.setXRotation(self.xRot + 8 * dy)
+			self.setYRotation(self.yRot - 8 * dx)
+		elif event.buttons() & QtCore.Qt.RightButton:
+			self.setXRotation(self.xRot + 8 * dy)
+			self.setZRotation(self.zRot + 8 * dx)
+
+		self.lastPos = QtCore.QPoint(event.pos())
+
 	def makeGrid(self):
-		grid = self.grid(2)
+		grid = Grid.grid(2)
 
 		genList = GL.glGenLists(1)
 		GL.glNewList(genList, GL.GL_COMPILE)
@@ -392,7 +397,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                         color = red if t.generation == 0 else (gray if (t.generation % 2) == 0 else cyan)
                         GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, color)
 			GL.glBegin(GL.GL_TRIANGLE_FAN)
-			n = self.normal(t.v)
+			n = Grid.normal(t.v)
 			GL.glNormal3d(*n)
 			GL.glVertex3d(*t.v)
 			for c in t.corners:
