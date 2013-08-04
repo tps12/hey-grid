@@ -2,7 +2,6 @@
 
 """PySide port of the opengl/hellogl example from Qt v4.x"""
 
-from collections import deque
 import sys
 import math
 from PySide import QtCore, QtGui, QtOpenGL
@@ -84,17 +83,11 @@ class Grid(object):
 	def __init__(self, size):
 		self.size = size
 
-		self.tiles = deque()
-		for i in range(self.tile_count(self.size)):
-			self.tiles.append(Tile(i, 5 if i<12 else 6))
+		self.tiles = { i: Tile(i, 5 if i<12 else 6) for i in range(self.tile_count(self.size)) }
 
-		self.corners = deque()
-		for i in range(self.corner_count(self.size)):
-			self.corners.append(Corner(i))
+		self.corners = { i: Corner(i) for i in range(self.corner_count(self.size)) }
 
-		self.edges = deque()
-		for i in range(self.edge_count(self.size)):
-			self.edges.append(Edge(i))
+		self.edges = { i: Edge(i) for i in range(self.edge_count(self.size)) }
 
 	@staticmethod
 	def tile_count(size):
@@ -177,8 +170,8 @@ class Grid(object):
 				(5, 3, 10, 1, 4), (2, 5, 4, 0, 11), (3, 7, 6, 1, 8), (7, 2, 9, 0, 6)
 		]
 		
-		for t in grid.tiles:
-                                t.generation = 0
+		for t in grid.tiles.itervalues():
+                                t.generation = grid.size
 				t.v = icos_tiles[t.id]
 				for k in range(5):
 					t.tiles[k] = grid.tiles[icos_tiles_n[t.id][k]]
@@ -198,12 +191,12 @@ class Grid(object):
 		self._add_corner(19,grid,4,8,1)
 		
 		#_add corners to corners
-		for c in grid.corners:
+		for c in grid.corners.itervalues():
 				for k in range(3):
 					c.corners[k] = c.tiles[k].corners[(self.position(c.tiles[k], c)+1)%5]
 		#new edges
 		next_edge_id = 0
-		for t in grid.tiles:
+		for t in grid.tiles.itervalues():
 				for k in range(5):
 					if t.edges[k] is None:
 						self._add_edge(next_edge_id, grid, t.id, icos_tiles_n[t.id][k])
@@ -214,8 +207,8 @@ class Grid(object):
 	def _subgrid(self, prev):
 		grid = Grid(prev.size + 1)
 
-		prev_tile_count = len(prev.tiles)
-		prev_corner_count = len(prev.corners)
+		prev_tile_count = Grid.tile_count(prev.size)
+		prev_corner_count = Grid.corner_count(prev.size)
 
 		# old tiles
 		for i in range(prev_tile_count):
@@ -233,22 +226,22 @@ class Grid(object):
 
 		# new corners
 		next_corner_id = 0
-		for n in prev.tiles:
+		for n in prev.tiles.itervalues():
 			t = grid.tiles[n.id]
 			for k in range(t.edge_count):
 				self._add_corner(next_corner_id, grid, t.id, t.tiles[(k+t.edge_count-1)%t.edge_count].id, t.tiles[k].id)
 				next_corner_id += 1
 
 		# connect corners
-		for c in grid.corners:
+		for c in grid.corners.itervalues():
 			for k in range(3):
 				c.corners[k] = c.tiles[k].corners[(self.position(c.tiles[k], c)+1)%c.tiles[k].edge_count]
 
 		# new edges
 		next_edge_id = 0
-		for t in grid.tiles:
+		for t in grid.tiles.itervalues():
                         if t.generation is None:
-                            t.generation = prev.tiles[-1].generation + 1
+                            t.generation = grid.size
 			for k in range(t.edge_count):
 				if t.edges[k] is None:
 					self._add_edge(next_edge_id, grid, t.id, t.tiles[k].id)
@@ -354,7 +347,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                 green = (0, 1, 0, 1)
                 gray = (0.5, 0.5, 0.5, 1)
                 red = (1, 0, 0, 1)
-		for t in grid.tiles:
+		for t in grid.tiles.itervalues():
                         color = red if t.generation == 0 else (gray if (t.generation % 2) == 0 else cyan)
                         color = green if t == grid.tiles[4] else color
                         GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, color)
