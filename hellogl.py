@@ -63,7 +63,6 @@ class Tile(object):
 		self.edge_count = edge_count
 		self.tiles = self.edge_count * [None]
 		self.corners = self.edge_count * [None]
-		self.edges = self.edge_count * [None]
                 self.generation = None
 
 class Corner(object):
@@ -71,13 +70,6 @@ class Corner(object):
 		self.id = id
 		self.tiles = 3 * [None]
 		self.corners = 3 * [None]
-		self.edges = 3 * [None]
-
-class Edge(object):
-	def __init__(self, id):
-		self.id = id
-		self.tiles = 2 * [None]
-		self.corners = 2 * [None]
 
 class Grid(object):
 	def __init__(self, size):
@@ -86,8 +78,6 @@ class Grid(object):
 		self.tiles = { i: Tile(i, 5 if i<12 else 6) for i in range(self.tile_count(self.size)) }
 
 		self.corners = { i: Corner(i) for i in range(self.corner_count(self.size)) }
-
-		self.edges = { i: Edge(i) for i in range(self.edge_count(self.size)) }
 
 	@staticmethod
 	def tile_count(size):
@@ -128,24 +118,10 @@ class Grid(object):
 		for i in range(3):
 				t[i].corners[cls.position(t[i], t[(i+2)%3])] = c
 				c.tiles[i] = t[i]
-
-	@classmethod
-	def _add_edge(cls, id, grid, t1, t2):
-		e = grid.edges[id]
-		t = [grid.tiles[i] for i in (t1, t2)]
-		c = [
-				grid.corners[t[0].corners[cls.position(t[0], t[1])].id],
-				grid.corners[t[0].corners[(cls.position(t[0], t[1])+1)%t[0].edge_count].id]
-			]
-		for i in range(2):
-				t[i].edges[cls.position(t[i], t[(i+1)%2])] = e
-				e.tiles[i] = t[i]
-				c[i].edges[cls.position(c[i], c[(i+1)%2])] = e
-				e.corners[i] = c[i]
 	
 	@staticmethod
 	def position(o, n):
-		for os in (o.tiles, o.corners, o.edges):
+		for os in (o.tiles, o.corners):
 			for i in range(len(os)):
 				if os[i] == n:
 					return i
@@ -194,13 +170,6 @@ class Grid(object):
 		for c in grid.corners.itervalues():
 				for k in range(3):
 					c.corners[k] = c.tiles[k].corners[(self.position(c.tiles[k], c)+1)%5]
-		#new edges
-		next_edge_id = 0
-		for t in grid.tiles.itervalues():
-				for k in range(5):
-					if t.edges[k] is None:
-						self._add_edge(next_edge_id, grid, t.id, icos_tiles_n[t.id][k])
-						next_edge_id += 1
 		return grid
 
 	@classmethod
@@ -237,15 +206,10 @@ class Grid(object):
 			for k in range(3):
 				c.corners[k] = c.tiles[k].corners[(self.position(c.tiles[k], c)+1)%c.tiles[k].edge_count]
 
-		# new edges
-		next_edge_id = 0
+		# new generation
 		for t in grid.tiles.itervalues():
                         if t.generation is None:
                             t.generation = grid.size
-			for k in range(t.edge_count):
-				if t.edges[k] is None:
-					self._add_edge(next_edge_id, grid, t.id, t.tiles[k].id)
-					next_edge_id += 1
 
 		return grid
 
