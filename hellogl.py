@@ -116,15 +116,14 @@ class Grid(object):
 		v = tuple([sum([ti.v[i] for ti in t]) for i in range(3)])
 		c.v = cls.normal(v)
 		for i in range(3):
-				t[i].corners[cls.position(t[i], t[(i+2)%3])] = c
-				c.tiles[i] = t[i]
+				t[i].corners[cls.position(t[i].tiles, t[(i+2)%3])] = c.id
+				c.tiles[i] = t[i].id
 	
 	@staticmethod
-	def position(o, n):
-		for os in (o.tiles, o.corners):
-			for i in range(len(os)):
-				if os[i] == n:
-					return i
+	def position(os, n):
+		for i in range(len(os)):
+			if os[i] == n.id:
+				return i
 		return -1
 
 	@classmethod
@@ -150,7 +149,7 @@ class Grid(object):
                                 t.generation = grid.size
 				t.v = icos_tiles[t.id]
 				for k in range(5):
-					t.tiles[k] = grid.tiles[icos_tiles_n[t.id][k]]
+					t.tiles[k] = grid.tiles[icos_tiles_n[t.id][k]].id
 		for i in range(5):
 				self._add_corner(i, grid, 0, icos_tiles_n[0][(i+4)%5], icos_tiles_n[0][i])
 		for i in range(5):
@@ -169,7 +168,8 @@ class Grid(object):
 		#_add corners to corners
 		for c in grid.corners.itervalues():
 				for k in range(3):
-					c.corners[k] = c.tiles[k].corners[(self.position(c.tiles[k], c)+1)%5]
+					c.corners[k] = grid.tiles[c.tiles[k]].corners[(self.position(grid.tiles[c.tiles[k]].corners, c)+1)%5]
+
 		return grid
 
 	@classmethod
@@ -184,27 +184,27 @@ class Grid(object):
 			grid.tiles[i].v = prev.tiles[i].v
                         grid.tiles[i].generation = prev.tiles[i].generation
 			for k in range(grid.tiles[i].edge_count):
-				grid.tiles[i].tiles[k] = grid.tiles[prev.tiles[i].corners[k].id + prev_tile_count]
+				grid.tiles[i].tiles[k] = grid.tiles[prev.tiles[i].corners[k] + prev_tile_count].id
 
 		# old corners become tiles
 		for i in range(prev_corner_count):
 			grid.tiles[i+prev_tile_count].v = prev.corners[i].v
 			for k in range(3):
-				grid.tiles[i+prev_tile_count].tiles[2*k] = grid.tiles[prev.corners[i].corners[k].id + prev_tile_count]
-				grid.tiles[i+prev_tile_count].tiles[2*k+1] = grid.tiles[prev.corners[i].tiles[k].id]
+				grid.tiles[i+prev_tile_count].tiles[2*k] = grid.tiles[prev.corners[i].corners[k] + prev_tile_count].id
+				grid.tiles[i+prev_tile_count].tiles[2*k+1] = grid.tiles[prev.corners[i].tiles[k]].id
 
 		# new corners
 		next_corner_id = 0
 		for n in prev.tiles.itervalues():
 			t = grid.tiles[n.id]
 			for k in range(t.edge_count):
-				self._add_corner(next_corner_id, grid, t.id, t.tiles[(k+t.edge_count-1)%t.edge_count].id, t.tiles[k].id)
+				self._add_corner(next_corner_id, grid, t.id, t.tiles[(k+t.edge_count-1)%t.edge_count], t.tiles[k])
 				next_corner_id += 1
 
 		# connect corners
 		for c in grid.corners.itervalues():
 			for k in range(3):
-				c.corners[k] = c.tiles[k].corners[(self.position(c.tiles[k], c)+1)%c.tiles[k].edge_count]
+				c.corners[k] = grid.tiles[c.tiles[k]].corners[(self.position(grid.tiles[c.tiles[k]].corners, c)+1)%grid.tiles[c.tiles[k]].edge_count]
 
 		# new generation
 		for t in grid.tiles.itervalues():
@@ -319,11 +319,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 			n = Grid.normal(t.v)
 			GL.glNormal3d(*n)
 			GL.glVertex3d(*t.v)
-			for c in t.corners:
+			for c in t.corners + [t.corners[0]]:
 				GL.glNormal3d(*n)
-				GL.glVertex3d(*c.v)
-			GL.glNormal3d(*n)
-			GL.glVertex3d(*t.corners[0].v)
+				GL.glVertex3d(*grid.corners[c].v)
 			GL.glEnd()
 
 		GL.glEndList()
