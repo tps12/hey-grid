@@ -237,41 +237,6 @@ class Grid(object):
 	def _subgrid(self, prev):
 		grid = Grid(prev.size + 1)
 
-		prev_tile_count = Grid.tile_count(prev.size)
-		prev_corner_count = Grid.corner_count(prev.size)
-
-		# old tiles
-		for i in range(prev_tile_count):
-			grid.tiles[i].v = prev.tiles[i].v
-                        grid.tiles[i].generation = prev.tiles[i].generation
-			for k in range(grid.tiles[i].edge_count):
-				grid.tiles[i].tiles[k] = grid.tiles[prev.tiles[i].corners[k] + prev_tile_count].id
-
-		# old corners become tiles
-		for i in range(prev_corner_count):
-			grid.tiles[i+prev_tile_count].v = prev.corners[i].v
-			for k in range(3):
-				grid.tiles[i+prev_tile_count].tiles[2*k] = grid.tiles[prev.corners[i].corners[k] + prev_tile_count].id
-				grid.tiles[i+prev_tile_count].tiles[2*k+1] = grid.tiles[prev.corners[i].tiles[k]].id
-
-		# new corners
-		next_corner_id = 0
-		for n in prev.tiles.itervalues():
-			t = grid.tiles[n.id]
-			for k in range(t.edge_count):
-				self._add_corner(next_corner_id, grid, t.id, t.tiles[(k+t.edge_count-1)%t.edge_count], t.tiles[k])
-				next_corner_id += 1
-
-		# connect corners
-		for c in grid.corners.itervalues():
-			for k in range(3):
-				c.corners[k] = grid.tiles[c.tiles[k]].corners[(self.position(grid.tiles[c.tiles[k]].corners, c)+1)%grid.tiles[c.tiles[k]].edge_count]
-
-		# new generation
-		for t in grid.tiles.itervalues():
-                        if t.generation is None:
-                            t.generation = grid.size
-
 		faces, vertices = dict(), dict()
 
 		# faces from faces
