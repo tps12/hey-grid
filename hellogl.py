@@ -170,7 +170,57 @@ class Grid(object):
 				for k in range(3):
 					c.corners[k] = grid.tiles[c.tiles[k]].corners[(self.position(grid.tiles[c.tiles[k]].corners, c)+1)%5]
 
+		faces, vertices = dict(), dict()
+		for t in grid.tiles.itervalues():
+			faces[t.v] = [grid.corners[ci].v for ci in t.corners]
+			for c in faces[t.v]:
+				if c not in vertices:
+					fs = set()
+					vertices[c] = fs
+				else:
+					fs = vertices[c]
+				fs.add(t.v)
+		grid.faces = faces
+		grid.vertices = vertices
+
 		return grid
+
+	##
+	# Notes
+	#
+	# Each face has 5 or 6 sides, and has
+	#   - a unique index,
+	#   - a location (a 1-length vector representing its center), and
+	#   - a list of references to adjacent faces
+	#
+	# The unique index of a face at one resolution stays constant for the face
+	# in the same location in subsequent resolutions: the face is smaller, and
+	# gets new neighbors at higher resolutions, but otherwise stays put.
+	#
+	# A vertex at a given resolution
+	#   - is uniquely identified by the three faces it touches and
+	#   - is located at the mean of those faces' locations
+	#
+	# A face at a given resolution was either
+	#   - a face of the previous resolution
+	#       in which case
+	#         . it's at the same location as previously and
+	#         . each of its vertices is the midpoint of the face itself and the
+	#             preceding face's two nearest vertices
+	#       and therefore
+	#         . can be entirely defined by the face's location and vertices
+	#             at the preceding resolution
+	#       or
+	#   - a vertex of the previous resolution
+	#       in which case
+	#         . each of its vertices is the midpoint of two previous vertices
+	#             and one previous face
+	#       and therefore
+	#         . can be entirely defined by the locations and vertices of the
+	#             faces sharing the vertex at the preceding resolution
+	# implying that, for a given resolution to be subdivided,
+	#   - each face must be capable of being mapped to its vertices, and
+	#   - each vertex must be mappable to the faces that share it
 
 	@classmethod
 	def _subgrid(self, prev):
