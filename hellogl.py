@@ -108,6 +108,17 @@ class Grid(object):
 	def invert(cls, v):
 		return tuple([-vi for vi in v])
 
+	@staticmethod
+	def cross(v1, v2):
+		return (
+			v1[1]*v2[2] - v1[2]*v2[1],
+			v1[2]*v2[0] - v1[0]*v2[2],
+			v1[0]*v2[1] - v1[1]*v2[0])
+
+	@staticmethod
+	def dot(v1, v2):
+		return sum([v1[i] * v2[i] for i in range(3)])
+
 	@classmethod
 	def _add_corner(cls, id, grid, t1, t2, t3):
 		c = grid.corners[id]
@@ -261,6 +272,45 @@ class Grid(object):
                         if t.generation is None:
                             t.generation = grid.size
 
+		faces, vertices = dict(), dict()
+
+		# faces from faces
+		for t, vs in prev.faces.iteritems():
+			nvs = []
+			for v1, v2 in zip(vs, [vs[-1]] + vs):
+				nvs.append(self.normal([sum([vi[i] for vi in sorted((t, v1, v2))]) for i in range(3)]))
+			faces[t] = nvs
+			for c in faces[t]:
+				if c not in vertices:
+					fs = set()
+					vertices[c] = fs
+				else:
+					fs = vertices[c]
+				fs.add(t)
+
+		# faces from vertices
+		for v, fs in prev.vertices.iteritems():
+			nvs = []
+			lfs = list(fs)
+			# for each pair of faces meeting at the previous vertex
+			for f1, f2 in zip(lfs, lfs[1:] + lfs[0:1]):
+				svs = list(set(prev.faces[f1]) & set(prev.faces[f2]))
+				# new vertex at the midpoint between the two common old vertices and old face location
+				for f in f1, f2:
+					nvs.append(self.normal([sum([vi[i] for vi in sorted([f] + svs)]) for i in range(3)]))
+			# make sure new vertices wind correctly
+			faces[v] = nvs if self.dot(v, self.cross(*nvs[0:2])) > 0 else list(reversed(nvs))
+			for c in faces[v]:
+				if c not in vertices:
+					fs = set()
+					vertices[c] = fs
+				else:
+					fs = vertices[c]
+				fs.add(v)
+
+		grid.faces = faces
+		grid.vertices = vertices
+
 		return grid
 
 	# makes a spherical grid "subdivided" the given number of times
@@ -361,17 +411,16 @@ class GLWidget(QtOpenGL.QGLWidget):
                 green = (0, 1, 0, 1)
                 gray = (0.5, 0.5, 0.5, 1)
                 red = (1, 0, 0, 1)
-		for t in grid.tiles.itervalues():
-                        color = red if t.generation == 0 else (gray if (t.generation % 2) == 0 else cyan)
-                        color = green if t == grid.tiles[4] else color
+		for t, vs in grid.faces.iteritems():
+                        color = red
+                        color = green if t == grid.faces.keys()[4] else color
                         GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, color)
 			GL.glBegin(GL.GL_TRIANGLE_FAN)
-			n = Grid.normal(t.v)
+			n = Grid.normal(t)
 			GL.glNormal3d(*n)
-			GL.glVertex3d(*t.v)
-			for c in t.corners + [t.corners[0]]:
-				GL.glNormal3d(*n)
-				GL.glVertex3d(*grid.corners[c].v)
+			GL.glVertex3d(*t)
+			for c in vs + [vs[0]]:
+				GL.glVertex3d(*c)
 			GL.glEnd()
 
 		GL.glEndList()
