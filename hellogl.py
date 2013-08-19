@@ -278,6 +278,55 @@ class Grid(object):
 
 		return grid
 
+	# Returns a new grid subdividing a single tile from the previous size
+	@classmethod
+	def _subtile(self, prev, f):
+		grid = Grid(prev.size + 1)
+
+		faces, vertices = dict(), dict()
+
+		# face from face
+		#for t, vs in prev.faces.iteritems():
+		t, vs = f, prev.faces[f]
+		nvs = []
+		for v1, v2 in zip(vs, [vs[-1]] + vs):
+			nvs.append(self.normal([sum([vi[i] for vi in sorted((t, v1, v2))]) for i in range(3)]))
+		faces[t] = nvs
+		for c in faces[t]:
+			if c not in vertices:
+				fs = set()
+				vertices[c] = fs
+			else:
+				fs = vertices[c]
+			fs.add(t)
+
+		# faces from vertices
+		#for v, fs in prev.vertices.iteritems():
+		for v in prev.faces[f]:
+			fs = prev.vertices[v]
+			nvs = []
+			lfs = list(fs)
+			# for each pair of faces meeting at the previous vertex
+			for f1, f2 in zip(lfs, lfs[1:] + lfs[0:1]):
+				svs = list(set(prev.faces[f1]) & set(prev.faces[f2]))
+				# new vertex at the midpoint between the two common old vertices and old face location
+				for f in f1, f2:
+					nvs.append(self.normal([sum([vi[i] for vi in sorted([f] + svs)]) for i in range(3)]))
+			# make sure new vertices wind correctly
+			faces[v] = nvs if self.dot(v, self.cross(*nvs[0:2])) > 0 else list(reversed(nvs))
+			for c in faces[v]:
+				if c not in vertices:
+					fs = set()
+					vertices[c] = fs
+				else:
+					fs = vertices[c]
+				fs.add(v)
+
+		grid.faces = faces
+		grid.vertices = vertices
+
+		return grid
+
 	# makes a spherical grid "subdivided" the given number of times
 	#
 	# a size 0 grid is a dodecahedron, and each subsequent size is the result
