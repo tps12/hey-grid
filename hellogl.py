@@ -76,20 +76,6 @@ def cross(v1, v2):
 def dot(v1, v2):
 	return sum([v1[i] * v2[i] for i in range(3)])
 
-class Tile(object):
-	def __init__(self, id, edge_count):
-		self.id = id
-		self.edge_count = edge_count
-		self.tiles = self.edge_count * [None]
-		self.corners = self.edge_count * [None]
-                self.generation = None
-
-class Corner(object):
-	def __init__(self, id):
-		self.id = id
-		self.tiles = 3 * [None]
-		self.corners = 3 * [None]
-
 class SubGrid(object):
 	def __init__(self, prev):
 		self.prev = prev
@@ -156,40 +142,6 @@ class Grid(object):
 		self.prev = prev
 		self.size = self.prev.size + 1 if self.prev is not None else 0
 
-		self.tiles = { i: Tile(i, 5 if i<12 else 6) for i in range(self.tile_count(self.size)) }
-
-		self.corners = { i: Corner(i) for i in range(self.corner_count(self.size)) }
-
-	@staticmethod
-	def tile_count(size):
-		return 10*pow(3,size)+2
-
-	@staticmethod
-	def corner_count(size):
-		return 20*pow(3,size)
-
-	@staticmethod
-	def edge_count(size):
-		return 30*pow(3,size)
-
-	@classmethod
-	def _add_corner(cls, id, grid, t1, t2, t3):
-		c = grid.corners[id]
-		t = [grid.tiles[i] for i in (t1, t2, t3)]
-
-		v = tuple([sum([ti.v[i] for ti in t]) for i in range(3)])
-		c.v = normal(v)
-		for i in range(3):
-				t[i].corners[cls.position(t[i].tiles, t[(i+2)%3])] = c.id
-				c.tiles[i] = t[i].id
-	
-	@staticmethod
-	def position(os, n):
-		for i in range(len(os)):
-			if os[i] == n.id:
-				return i
-		return -1
-
 	@classmethod
 	def grid0(self):
 		grid = Grid()
@@ -208,42 +160,22 @@ class Grid(object):
 				(9, 5, 8, 1, 0), (2, 3, 8, 4, 9), (0, 1, 10, 7, 11), (11, 6, 10, 3, 2),
 				(5, 3, 10, 1, 4), (2, 5, 4, 0, 11), (3, 7, 6, 1, 8), (7, 2, 9, 0, 6)
 		]
-		
-		for t in grid.tiles.itervalues():
-                                t.generation = grid.size
-				t.v = icos_tiles[t.id]
-				for k in range(5):
-					t.tiles[k] = grid.tiles[icos_tiles_n[t.id][k]].id
-		for i in range(5):
-				self._add_corner(i, grid, 0, icos_tiles_n[0][(i+4)%5], icos_tiles_n[0][i])
-		for i in range(5):
-				self._add_corner(i+5, grid, 3, icos_tiles_n[3][(i+4)%5], icos_tiles_n[3][i])
-		self._add_corner(10,grid,10,1,8)
-		self._add_corner(11,grid,1,10,6)
-		self._add_corner(12,grid,6,10,7)
-		self._add_corner(13,grid,6,7,11)
-		self._add_corner(14,grid,11,7,2)
-		self._add_corner(15,grid,11,2,9)
-		self._add_corner(16,grid,9,2,5)
-		self._add_corner(17,grid,9,5,4)
-		self._add_corner(18,grid,4,5,8)
-		self._add_corner(19,grid,4,8,1)
-		
-		#_add corners to corners
-		for c in grid.corners.itervalues():
-				for k in range(3):
-					c.corners[k] = grid.tiles[c.tiles[k]].corners[(self.position(grid.tiles[c.tiles[k]].corners, c)+1)%5]
 
 		faces, vertices = dict(), dict()
-		for t in grid.tiles.itervalues():
-			faces[t.v] = [grid.corners[ci].v for ci in t.corners]
-			for c in faces[t.v]:
+		for i in range(len(icos_tiles)):
+			fs = list(icos_tiles_n[i])
+			nvs = []
+			for f1, f2 in zip(fs, [fs[-1]] + fs):
+				nvs.append(normal([sum([vi[j] for vi in [icos_tiles[fi] for fi in (i, f1, f2)]]) for j in range(3)]))
+			faces[icos_tiles[i]] = nvs
+			for c in faces[icos_tiles[i]]:
 				if c not in vertices:
 					fs = set()
 					vertices[c] = fs
 				else:
 					fs = vertices[c]
-				fs.add(t.v)
+				fs.add(icos_tiles[i])
+
 		grid.faces = faces
 		grid.vertices = vertices
 
