@@ -152,8 +152,9 @@ class SubGrid(object):
 				fs.add(v)
 
 class Grid(object):
-	def __init__(self, size):
-		self.size = size
+	def __init__(self, prev=None):
+		self.prev = prev
+		self.size = self.prev.size + 1 if self.prev is not None else 0
 
 		self.tiles = { i: Tile(i, 5 if i<12 else 6) for i in range(self.tile_count(self.size)) }
 
@@ -191,7 +192,7 @@ class Grid(object):
 
 	@classmethod
 	def grid0(self):
-		grid = Grid(0)
+		grid = Grid()
 
 		x = -0.525731112119133606
 		z = -0.850650808352039932
@@ -287,7 +288,7 @@ class Grid(object):
 
 	@classmethod
 	def _subgrid(self, prev):
-		grid = Grid(prev.size + 1)
+		grid = Grid(prev)
 
 		faces, vertices = dict(), dict()
 
@@ -364,7 +365,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 		self.grid = grid
 		self._rotationoffset = rotationoffset
-		self.object = 0
+		self.objects = []
 		self.xRot = 0
 		self.yRot = self._rotationoffset * 16
 		self.zRot = 0
@@ -380,6 +381,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 	def sizeHint(self):
 		return QtCore.QSize(400, 400)
 
+	def layer(self, index):
+		if self.objects[index] != self.objects[self.index]:
+			self.index = index
+			self.updateGL()
+
 	def rotate(self, angle):
 		angle = self.normalizeAngle((angle + self._rotationoffset) * 16)
 		if angle != self.yRot:
@@ -388,8 +394,12 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 	def initializeGL(self):
 		self.qglClearColor(self.trolltechPurple.darker())
-		#self.object = self.makeObject()
-		self.object = self.makeGrid()
+		self.objects = [None for _ in range(self.grid.size + 1)]
+		grid = self.grid
+		for i in range(len(self.objects) - 1, -1, -1):
+			self.objects[i] = self.makeGrid(grid)
+			grid = grid.prev
+		self.index = -1
 		GL.glShadeModel(GL.GL_SMOOTH)
 		#GL.glEnable(GL.GL_DEPTH_TEST)
 		GL.glEnable(GL.GL_CULL_FACE)
@@ -407,7 +417,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
 		GL.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
 		GL.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
-		GL.glCallList(self.object)
+		GL.glCallList(self.objects[self.index])
 
 	def resizeGL(self, width, height):
 		side = min(width, height)
@@ -418,9 +428,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glOrtho(-1.1, 1.1, 1.1, -1.1, 0, 11)
 		GL.glMatrixMode(GL.GL_MODELVIEW)
 
-	def makeGrid(self):
-		grid = Grid.grid(2)
-
+	def makeGrid(self, grid):
 		genList = GL.glGenLists(1)
 		GL.glNewList(genList, GL.GL_COMPILE)
 
