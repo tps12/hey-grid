@@ -4,7 +4,7 @@ from random import randint
 from PySide.QtCore import QPointF
 from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QPen, QPolygonF
 
-from hellogl import GLWidget, Grid, SubGrid
+from hellogl import GLWidget, Grid
 
 class ScreenPresenter(object):
     def __init__(self, view, uistack, widget):
@@ -12,13 +12,17 @@ class ScreenPresenter(object):
         f.setWeight(QFont.Black)
         f.setPixelSize(16)
 
-        grid = Grid.grid(2)
+        grid = Grid()
+        while grid.size < 3:
+            subgrid = Grid(grid)
+            subgrid.populate()
+            grid = subgrid
         p = grid.faces.keys()[12]
-        subgrid = SubGrid(grid)
+        subgrid = Grid(grid)
         subgrid.populate(p)
         grid = subgrid
         while grid.size < 7:
-            subgrid = SubGrid(grid)
+            subgrid = Grid(grid)
             subgrid.populate(grid.faces.keys()[3])
             grid = subgrid
 

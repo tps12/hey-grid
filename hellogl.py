@@ -76,18 +76,60 @@ def cross(v1, v2):
 def dot(v1, v2):
 	return sum([v1[i] * v2[i] for i in range(3)])
 
-class SubGrid(object):
-	def __init__(self, prev):
+def addface(fs, vs, f):
+	for v in fs[f]:
+		if v not in vs:
+			vs[v] = vfs = set()
+		else:
+			vfs = vs[v]
+		if f not in vfs:
+			vfs.add(f)
+
+def makeface(fs, vs, v, ns):
+	nvs = []
+	for n1, n2 in zip(ns, [ns[-1]] + ns):
+		nvs.append(normal([sum([vi[i] for vi in sorted((v, n1, n2))]) for i in range(3)]))
+	fs[v] = nvs
+	addface(fs, vs, v)
+
+class Grid(object):
+	def __init__(self, prev=None):
 		self.prev = prev
-		self.size = self.prev.size + 1
-		self.faces = dict()
-		self.vertices = dict()
+		self.size = self.prev.size + 1 if self.prev is not None else 0
+		self.faces = {}
+		self.vertices = {}
+
+		if self.prev is None:
+			x = -0.525731112119133606
+			z = -0.850650808352039932
+
+			icos_tiles = [
+					(-x, 0, z), (x, 0, z), (-x, 0, -z), (x, 0, -z),
+					(0, z, x), (0, z, -x), (0, -z, x), (0, -z, -x),
+					(z, x, 0), (-z, x, 0), (z, -x, 0), (-z, -x, 0)
+			]
+
+			icos_tiles_n = [
+					(9, 4, 1, 6, 11), (4, 8, 10, 6, 0), (11, 7, 3, 5, 9), (2, 7, 10, 8, 5),
+					(9, 5, 8, 1, 0), (2, 3, 8, 4, 9), (0, 1, 10, 7, 11), (11, 6, 10, 3, 2),
+					(5, 3, 10, 1, 4), (2, 5, 4, 0, 11), (3, 7, 6, 1, 8), (7, 2, 9, 0, 6)
+			]
+
+			for i in range(len(icos_tiles)):
+				makeface(self.faces, self.vertices, icos_tiles[i], [icos_tiles[n] for n in icos_tiles_n[i]])
 
 	# Populates grid by subdividing a single tile from the previous size
-	def populate(self, f):
+	#
+	# If face is omitted, full previous size is subdivided
+	def populate(self, f=None):
 		grid = self
 		prev = self.prev
 		faces, vertices = self.faces, self.vertices
+
+		if f is None:
+			for f in prev.faces:
+				self.populate(f)
+			return
 
 		if f in faces:
 			return
@@ -101,22 +143,9 @@ class SubGrid(object):
 					prev.populate(n)
 
 		# face from face
-		#for t, vs in prev.faces.iteritems():
-		t, vs = f, prev.faces[f]
-		nvs = []
-		for v1, v2 in zip(vs, [vs[-1]] + vs):
-			nvs.append(normal([sum([vi[i] for vi in sorted((t, v1, v2))]) for i in range(3)]))
-		faces[t] = nvs
-		for c in faces[t]:
-			if c not in vertices:
-				fs = set()
-				vertices[c] = fs
-			else:
-				fs = vertices[c]
-			fs.add(t)
+		makeface(faces, vertices, f, prev.faces[f])
 
 		# faces from vertices
-		#for v, fs in prev.vertices.iteritems():
 		for v in prev.faces[f]:
 			fs = prev.vertices[v]
 			nvs = []
@@ -129,57 +158,7 @@ class SubGrid(object):
 					nvs.append(normal([sum([vi[i] for vi in sorted([f] + svs)]) for i in range(3)]))
 			# make sure new vertices wind correctly
 			faces[v] = nvs if dot(v, cross(*nvs[0:2])) > 0 else list(reversed(nvs))
-			for c in faces[v]:
-				if c not in vertices:
-					fs = set()
-					vertices[c] = fs
-				else:
-					fs = vertices[c]
-				fs.add(v)
-
-class Grid(object):
-	def __init__(self, prev=None):
-		self.prev = prev
-		self.size = self.prev.size + 1 if self.prev is not None else 0
-
-	@classmethod
-	def grid0(self):
-		grid = Grid()
-
-		x = -0.525731112119133606
-		z = -0.850650808352039932
-		
-		icos_tiles = [
-				(-x, 0, z), (x, 0, z), (-x, 0, -z), (x, 0, -z),
-				(0, z, x), (0, z, -x), (0, -z, x), (0, -z, -x),
-				(z, x, 0), (-z, x, 0), (z, -x, 0), (-z, -x, 0)
-		]
-		
-		icos_tiles_n = [
-				(9, 4, 1, 6, 11), (4, 8, 10, 6, 0), (11, 7, 3, 5, 9), (2, 7, 10, 8, 5),
-				(9, 5, 8, 1, 0), (2, 3, 8, 4, 9), (0, 1, 10, 7, 11), (11, 6, 10, 3, 2),
-				(5, 3, 10, 1, 4), (2, 5, 4, 0, 11), (3, 7, 6, 1, 8), (7, 2, 9, 0, 6)
-		]
-
-		faces, vertices = dict(), dict()
-		for i in range(len(icos_tiles)):
-			fs = list(icos_tiles_n[i])
-			nvs = []
-			for f1, f2 in zip(fs, [fs[-1]] + fs):
-				nvs.append(normal([sum([vi[j] for vi in [icos_tiles[fi] for fi in (i, f1, f2)]]) for j in range(3)]))
-			faces[icos_tiles[i]] = nvs
-			for c in faces[icos_tiles[i]]:
-				if c not in vertices:
-					fs = set()
-					vertices[c] = fs
-				else:
-					fs = vertices[c]
-				fs.add(icos_tiles[i])
-
-		grid.faces = faces
-		grid.vertices = vertices
-
-		return grid
+			addface(faces, vertices, v)
 
 	##
 	# Notes
@@ -220,47 +199,8 @@ class Grid(object):
 
 	@classmethod
 	def _subgrid(self, prev):
-		grid = Grid(prev)
-
-		faces, vertices = dict(), dict()
-
-		# faces from faces
-		for t, vs in prev.faces.iteritems():
-			nvs = []
-			for v1, v2 in zip(vs, [vs[-1]] + vs):
-				nvs.append(normal([sum([vi[i] for vi in sorted((t, v1, v2))]) for i in range(3)]))
-			faces[t] = nvs
-			for c in faces[t]:
-				if c not in vertices:
-					fs = set()
-					vertices[c] = fs
-				else:
-					fs = vertices[c]
-				fs.add(t)
-
-		# faces from vertices
-		for v, fs in prev.vertices.iteritems():
-			nvs = []
-			lfs = list(fs)
-			# for each pair of faces meeting at the previous vertex
-			for f1, f2 in zip(lfs, lfs[1:] + lfs[0:1]):
-				svs = list(set(prev.faces[f1]) & set(prev.faces[f2]))
-				# new vertex at the midpoint between the two common old vertices and old face location
-				for f in f1, f2:
-					nvs.append(normal([sum([vi[i] for vi in sorted([f] + svs)]) for i in range(3)]))
-			# make sure new vertices wind correctly
-			faces[v] = nvs if dot(v, cross(*nvs[0:2])) > 0 else list(reversed(nvs))
-			for c in faces[v]:
-				if c not in vertices:
-					fs = set()
-					vertices[c] = fs
-				else:
-					fs = vertices[c]
-				fs.add(v)
-
-		grid.faces = faces
-		grid.vertices = vertices
-
+		grid = self(prev)
+		grid.populate()
 		return grid
 
 	# makes a spherical grid "subdivided" the given number of times
@@ -289,7 +229,7 @@ class Grid(object):
 	# 0.743 m^2 and around a linear meter between adjacent tiles
 	@classmethod
 	def grid(self, size):
-		return self.grid0() if size == 0 else self._subgrid(self.grid(size-1))
+		return self() if size == 0 else self._subgrid(self.grid(size-1))
 
 class GLWidget(QtOpenGL.QGLWidget):
 	def __init__(self, grid, rotationoffset, parent=None):
