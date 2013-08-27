@@ -68,10 +68,11 @@ def normal(v):
 	return tuple([vi * d for vi in v])
 
 class GLWidget(QtOpenGL.QGLWidget):
-	def __init__(self, grid, rotationoffset, parent=None):
+	def __init__(self, grid, colors, rotationoffset, parent=None):
 		QtOpenGL.QGLWidget.__init__(self, parent)
 
 		self.grid = grid
+		self.colors = colors
 		self._rotationoffset = rotationoffset
 		self.objects = []
 		self.xRot = 0
@@ -105,7 +106,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 		self.objects = [None for _ in range(self.grid.size + 1)]
 		grid = self.grid
 		for i in range(len(self.objects) - 1, -1, -1):
-			self.objects[i] = self.makeGrid(grid)
+			self.objects[i] = self.makeGrid(grid, self.colors[i])
 			grid = grid.prev
 		self.index = -1
 		GL.glShadeModel(GL.GL_SMOOTH)
@@ -136,17 +137,12 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glOrtho(-1.1, 1.1, 1.1, -1.1, 0, 11)
 		GL.glMatrixMode(GL.GL_MODELVIEW)
 
-	def makeGrid(self, grid):
+	def makeGrid(self, grid, colors):
 		genList = GL.glGenLists(1)
 		GL.glNewList(genList, GL.GL_COMPILE)
 
-                cyan = (0, 1, 1, 1)
-                green = (0, 1, 0, 1)
-                gray = (0.5, 0.5, 0.5, 1)
-                red = (1, 0, 0, 1)
 		for t, vs in grid.faces.iteritems():
-                        color = red
-                        color = green if t == grid.faces.keys()[4] else color
+			color = colors[t]
                         GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, color)
 			GL.glBegin(GL.GL_TRIANGLE_FAN)
 			n = normal(t)
