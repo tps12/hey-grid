@@ -4,7 +4,8 @@ from random import randint
 from PySide.QtCore import QPointF
 from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QPen, QPolygonF
 
-from hellogl import GLWidget, Grid
+from grid import Grid
+from hellogl import GLWidget
 
 class ScreenPresenter(object):
     def __init__(self, view, uistack, widget):
