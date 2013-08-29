@@ -5,6 +5,7 @@ from PySide.QtCore import QPointF
 from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QPen, QPolygonF
 
 from grid import Grid
+from griddetail import GridDetail
 from hellogl import GLWidget
 
 class ScreenPresenter(object):
@@ -47,6 +48,9 @@ class ScreenPresenter(object):
         self._views = [GLWidget(grid, colors, 0, view), GLWidget(grid, colors, 180, view)]
         for v in self._views:
             view.angles.addWidget(v)
+
+        view.detail.setScene(GridDetail(grid, colors, grid.faces.keys()[3]))
+        view.detail.scale(10, -10)
 
         view.layer.setMaximum(grid.size)
 
