@@ -49,12 +49,20 @@ class ScreenPresenter(object):
         for v in self._views:
             view.angles.addWidget(v)
 
-        view.detail.setScene(GridDetail(grid, colors, grid.faces.keys()[3]))
+        for face in grids[0].faces.keys():
+            if len(grids[0].faces[face]) == 6:
+                break
+        self._detail = GridDetail(grids, colors, face)
+        view.detail.setScene(self._detail)
         view.detail.scale(10, -10)
 
-        view.layer.setMaximum(grid.size)
-
         view.layer.sliderMoved.connect(self.layer)
+        view.detailLayer.sliderMoved.connect(self.detaillayer)
+
+        for l in view.layer, view.detailLayer:
+            l.setMaximum(grid.size)
+            l.setValue(grid.size)
+
         view.rotation.valueChanged.connect(self.rotate)
 
         view.layer.setValue(view.layer.maximum())
@@ -64,6 +72,9 @@ class ScreenPresenter(object):
     def layer(self, depth):
         for v in self._views:
             v.layer(depth)
+
+    def detaillayer(self, depth):
+        self._detail.layer(depth)
 
     def rotate(self, value):
         for v in self._views:
