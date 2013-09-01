@@ -1,7 +1,7 @@
 from math import sqrt
 
 from PySide.QtCore import QPointF, Qt
-from PySide.QtGui import QColor, QGraphicsScene, QPen, QPolygonF
+from PySide.QtGui import QColor, QGraphicsScene, QMatrix, QPen, QPolygonF
 
 N, NW, SW, S, SE, NE = range(6)
 dirs = ['N', 'NW', 'SW', 'S', 'SE', 'NE']
@@ -71,7 +71,20 @@ class GridDetail(QGraphicsScene):
             base = sorted(populated)[len(populated)/2] if len(populated) > 0 else 0
 
             color = QColor(*[s * 255 for s in colors[face]])
-            polygon = self.addPolygon(pentproto.translated(*offset), QPen(Qt.transparent), color)
-            polygon.setTransformOriginPoint(*offset)
-            polygon.setRotation(60 * (base + 3))
+            item = self.addPolygon(pentproto.translated(*offset), QPen(Qt.transparent), color)
+            item.setTransformOriginPoint(*offset)
+            item.setRotation(60 * (base + 3))
+            polygon = item.polygon()
+            # look for neighbors two clockwise and two counter- from base
+            for counter in (0, 1):
+                ni = (base - 2 + 4 * counter) % 6
+                if ni in [n%6 for n in populated]:
+                    neighbor = self.itemAt(*[offset[i] + offsets[ni][i] for i in range(2)])
+                    neighborpolygon = neighbor.polygon()
+                    vertex = (3 - ni + counter) % 6
+                    matrix = QMatrix()
+                    matrix.rotate(item.rotation())
+                    rotated = matrix.map(pentproto.value(0)).toTuple()
+                    neighborpolygon.replace(vertex, QPointF(*[rotated[vi] + offset[vi] for vi in range(2)]))
+                    neighbor.setPolygon(neighborpolygon)
         self.update()
