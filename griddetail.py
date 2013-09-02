@@ -25,7 +25,7 @@ class GridDetail(QGraphicsScene):
         colors = self.colors[self._layer]
         if self.face not in grid.faces:
             self.face = grid.faces.keys()[0]
-        if len(grid.faces[self.face]) == 5:
+        if edge is None and len(grid.faces[self.face]) == 5:
             for f in grid.faces:
                 if len(grid.faces[f]) == 6:
                     self.face = f
@@ -48,12 +48,11 @@ class GridDetail(QGraphicsScene):
             if face not in seen:
                 seen.add(face)
                 vertices = grid.faces[face]
-                if len(vertices) == 5:
-                    pents.append((face, offset))
-                    continue
                 color = QColor(*[s * 255 for s in colors[face]])
                 self.addPolygon(hexproto.translated(*offset), QPen(Qt.transparent), color)
                 self.offsetfaces[offset] = face
+                if len(vertices) == 5:
+                    pents.append((face, offset))
                 edges = self.edges(face)
                 # edges are in CCW order: find edge of origin in list to orient
                 source = edges.index(edge)
@@ -67,6 +66,7 @@ class GridDetail(QGraphicsScene):
                         q.insert(0, (commonfaces[0], (nextdir + 3) % 6, border, nextoffset))
                     count += 1
         for face, offset in pents:
+            self.removeItem(self.itemAt(*offset))
             populated = []
             for ni in range(len(offsets)):
                 if self.itemAt(*[offset[i] + offsets[ni][i] for i in range(2)]) is not None:
@@ -104,7 +104,11 @@ class GridDetail(QGraphicsScene):
         return [tuple(sorted(vs)) for vs in zip(vertices, vertices[1:] + vertices[0:1])]
 
     def move(self, direction):
-        face = self.offsetfaces[offsets[dirs.index(direction)]]
+        offset = offsets[dirs.index(direction)]
+        try:
+            face = self.offsetfaces[offset]
+        except KeyError:
+            return
         edge = list(set(self.edges(self.face)) & set(self.edges(face)))[0]
         self.face = face
         self.layer(self._layer, (dirs.index(direction) + 3) % 6, edge)
