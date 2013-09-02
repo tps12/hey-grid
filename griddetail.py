@@ -10,6 +10,12 @@ offsets = [(0, 2*sqrt(3)), (-3, sqrt(3)), (-3, -sqrt(3)), (0, -2*sqrt(3)), (3, -
 hexproto = QPolygonF([QPointF(*cs) for cs in vs])
 pentproto = QPolygonF([QPointF(*cs) for cs in [(0, sqrt(3))] + vs[2:]])
 
+def distancesquared(v):
+    return sum([vi * vi for vi in v])
+
+radius = 5
+radiussquared = radius * radius * distancesquared(offsets[0])
+
 class GridDetail(QGraphicsScene):
     def __init__(self, grid, colors, face):
         QGraphicsScene.__init__(self)
@@ -63,7 +69,8 @@ class GridDetail(QGraphicsScene):
                     if len(commonfaces) > 0:
                         nextdir = (whence + 1 + count) % 6
                         nextoffset = tuple([offset[i] + offsets[nextdir][i] for i in range(2)])
-                        q.insert(0, (commonfaces[0], (nextdir + 3) % 6, border, nextoffset))
+                        if distancesquared(nextoffset) < radiussquared:
+                            q.insert(0, (commonfaces[0], (nextdir + 3) % 6, border, nextoffset))
                     count += 1
         for face, offset in pents:
             self.removeItem(self.itemAt(*offset))
