@@ -1,8 +1,8 @@
 from math import sqrt
 from random import randint, random
 
-from PySide.QtCore import QPointF
-from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QPen, QPolygonF
+from PySide.QtCore import QEvent, QPointF
+from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QKeyEvent, QPen, QPolygonF, QWidget
 
 from grid import Grid
 from griddetail import GridDetail
@@ -59,6 +59,21 @@ class ScreenPresenter(object):
         view.layer.sliderMoved.connect(self.layer)
         view.detailLayer.sliderMoved.connect(self.detaillayer)
 
+        def detailevent(event):
+            if (isinstance(event, QKeyEvent) and
+                    event.text() == u'\t' and
+                    event.type() == QEvent.ShortcutOverride):
+                widget.keyPressEvent(QKeyEvent(
+                    QEvent.KeyPress,
+                    event.key(),
+                    event.nativeModifiers(),
+                    event.text(),
+                    event.isAutoRepeat(),
+                    event.count()))
+                return True
+            return QWidget.event(widget, event)
+
+        widget.event = detailevent
         widget.keyPressEvent = self.key
 
         for l in view.layer, view.detailLayer:
@@ -84,6 +99,15 @@ class ScreenPresenter(object):
             direction = None
         if direction is not None:
             self._detail.move(direction)
+            return
+        try:
+            rotation = {
+                u'\t': 'CCW',
+                u'p': 'CW'}[event.text()]
+        except KeyError:
+            rotation = None
+        if rotation is not None:
+            self._detail.rotate(rotation)
 
     def layer(self, depth):
         for v in self._views:

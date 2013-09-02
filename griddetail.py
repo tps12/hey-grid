@@ -38,6 +38,8 @@ class GridDetail(QGraphicsScene):
         self.offsetfaces = {}
         direction = S if direction is None else direction
         edge = tuple(sorted(grid.faces[face][0:2])) if edge is None else edge
+        self._direction = direction
+        self._edge = edge
         q = [(face, direction, edge, (0,0))]
         pents = []
         seen = set()
@@ -109,3 +111,7 @@ class GridDetail(QGraphicsScene):
             return
         edge = list(set(self.edges(self._center)) & set(self.edges(face)))[0]
         self.center(face, (dirs.index(direction) + 3) % 6, edge)
+
+    def rotate(self, rotation):
+        change = 1 if rotation == 'CW' else -1
+        self.center(self._center, self._direction + change, self._edge)
