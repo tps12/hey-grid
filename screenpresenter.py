@@ -59,6 +59,8 @@ class ScreenPresenter(object):
         view.layer.sliderMoved.connect(self.layer)
         view.detailLayer.sliderMoved.connect(self.detaillayer)
 
+        widget.keyPressEvent = self.key
+
         for l in view.layer, view.detailLayer:
             l.setMaximum(grid.size)
             l.setValue(grid.size)
@@ -68,6 +70,20 @@ class ScreenPresenter(object):
         view.layer.setValue(view.layer.maximum())
 
         self._uistack = uistack
+
+    def key(self, event):
+        try:
+            direction = {
+                u"'": 'NW',
+                u',': 'N',
+                u'.': 'NE',
+                u'a': 'SW',
+                u'o': 'S',
+                u'e': 'SE'}[event.text()]
+        except KeyError:
+            direction = None
+        if direction is not None:
+            self._detail.move(direction)
 
     def layer(self, depth):
         for v in self._views:
