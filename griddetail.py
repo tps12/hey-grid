@@ -11,26 +11,24 @@ hexproto = QPolygonF([QPointF(*cs) for cs in vs])
 pentproto = QPolygonF([QPointF(*cs) for cs in [(0, sqrt(3))] + vs[2:]])
 
 class GridDetail(QGraphicsScene):
-    def __init__(self, grids, colors, face):
+    def __init__(self, grid, colors, face):
         QGraphicsScene.__init__(self)
 
-        self.grids = grids
+        self.grid = grid
         self.colors = colors
-        self.face = face
-        self.layer(len(self.grids) - 1)
+        self.center(face)
 
-    def layer(self, i, direction=None, edge=None):
-        self._layer = i
-        grid = self.grids[self._layer]
-        colors = self.colors[self._layer]
-        if self.face not in grid.faces:
-            self.face = grid.faces.keys()[0]
-        if edge is None and len(grid.faces[self.face]) == 5:
+    def center(self, face, direction=None, edge=None):
+        grid = self.grid
+        colors = self.colors
+        if face not in grid.faces:
+            face = grid.faces.keys()[0]
+        if edge is None and len(grid.faces[face]) == 5:
             for f in grid.faces:
                 if len(grid.faces[f]) == 6:
-                    self.face = f
+                    face = f
                     break
-        face = self.face
+        self._center = face
 
         for item in self.items():
             self.removeItem(item)
@@ -100,7 +98,7 @@ class GridDetail(QGraphicsScene):
         self.update()
 
     def edges(self, face):
-        vertices = self.grids[self._layer].faces[face]
+        vertices = self.grid.faces[face]
         return [tuple(sorted(vs)) for vs in zip(vertices, vertices[1:] + vertices[0:1])]
 
     def move(self, direction):
@@ -109,6 +107,5 @@ class GridDetail(QGraphicsScene):
             face = self.offsetfaces[offset]
         except KeyError:
             return
-        edge = list(set(self.edges(self.face)) & set(self.edges(face)))[0]
-        self.face = face
-        self.layer(self._layer, (dirs.index(direction) + 3) % 6, edge)
+        edge = list(set(self.edges(self._center)) & set(self.edges(face)))[0]
+        self.center(face, (dirs.index(direction) + 3) % 6, edge)

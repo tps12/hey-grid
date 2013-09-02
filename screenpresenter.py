@@ -28,31 +28,31 @@ class ScreenPresenter(object):
             subgrid.populate(grid.faces.keys()[3])
             grid = subgrid
 
-        grids = []
+        self.grids = []
         prev = grid
         while prev is not None:
-            grids.insert(0, prev)
+            self.grids.insert(0, prev)
             prev = prev.prev
-        colors = [{}]
-        for f in grids[0].faces:
-            colors[-1][f] = tuple(3 * [0.5 * random() + 0.25])
-        for g in grids[1:]:
-            colors.append({})
+        self.colors = [{}]
+        for f in self.grids[0].faces:
+            self.colors[-1][f] = tuple(3 * [0.5 * random() + 0.25])
+        for g in self.grids[1:]:
+            self.colors.append({})
             for f in g.faces:
                 if f in g.prev.faces:
-                    colors[-1][f] = colors[-2][f]
+                    self.colors[-1][f] = self.colors[-2][f]
                 else:
-                    cs = [colors[-2][n][0] for n in g.prev.vertices[f] if n in colors[-2]]
-                    colors[-1][f] = tuple(3 * [sum(cs)/len(cs) + 0.125 * random() - 0.0675])
+                    cs = [self.colors[-2][n][0] for n in g.prev.vertices[f] if n in self.colors[-2]]
+                    self.colors[-1][f] = tuple(3 * [sum(cs)/len(cs) + 0.125 * random() - 0.0675])
 
-        self._views = [GLWidget(grid, colors, 0, view), GLWidget(grid, colors, 180, view)]
+        self._views = [GLWidget(self.grids[-1], self.colors, offset, view) for offset in (0, 180)]
         for v in self._views:
             view.angles.addWidget(v)
 
-        for face in grids[0].faces.keys():
-            if len(grids[0].faces[face]) == 6:
+        for face in self.grids[0].faces.keys():
+            if len(self.grids[0].faces[face]) == 6:
                 break
-        self._detail = GridDetail(grids, colors, face)
+        self._detail = GridDetail(self.grids[-1], self.colors[-1], face)
         view.detail.setScene(self._detail)
         view.detail.scale(10, -10)
 
@@ -90,7 +90,9 @@ class ScreenPresenter(object):
             v.layer(depth)
 
     def detaillayer(self, depth):
-        self._detail.layer(depth)
+        view = self._detail.views()[0]
+        self._detail = GridDetail(self.grids[depth], self.colors[depth], self.grids[depth].faces.keys()[0])
+        view.setScene(self._detail)
 
     def rotate(self, value):
         for v in self._views:
