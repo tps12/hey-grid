@@ -84,6 +84,15 @@ class ScreenPresenter(object):
             direction = None
         if direction is not None:
             self._detail.move(direction)
+            return
+        try:
+            rotation = {
+                u'\t': 'CCW',
+                u'p': 'CW'}[event.text()]
+        except KeyError:
+            rotation = None
+        if rotation is not None:
+            self._detail.rotate(rotation)
 
     def layer(self, depth):
         for v in self._views:
