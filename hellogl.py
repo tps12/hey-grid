@@ -104,10 +104,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 	def initializeGL(self):
 		self.qglClearColor(self.trolltechPurple.darker())
 		self.objects = [None for _ in range(self.grid.size + 1)]
-		grid = self.grid
-		for i in range(len(self.objects) - 1, -1, -1):
-			self.objects[i] = self.makeGrid(grid, self.colors[i])
-			grid = grid.prev
+		self.update()
 		self.index = -1
 		GL.glShadeModel(GL.GL_SMOOTH)
 		#GL.glEnable(GL.GL_DEPTH_TEST)
@@ -115,6 +112,17 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glEnable(GL.GL_LIGHTING)
 		GL.glEnable(GL.GL_LIGHT0)
 		GL.glEnable(GL.GL_LIGHT1)
+
+	def update(self):
+		grid = self.grid
+		for i in range(len(self.objects) - 1, -1, -1):
+			if self.objects[i] is not None:
+				GL.glDeleteLists(self.objects[i], 1)
+			self.objects[i] = self.makeGrid(grid, self.colors[i])
+			grid = grid.prev
+
+	def redraw(self):
+		self.updateGL()
 
 	def paintGL(self):
 		GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
@@ -142,7 +150,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glNewList(genList, GL.GL_COMPILE)
 
 		for t, vs in grid.faces.iteritems():
-			color = colors[t]
+			color = colors[t] if t in colors else (0.5, 0.5, 0.5)
                         GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, color)
 			GL.glBegin(GL.GL_TRIANGLE_FAN)
 			n = normal(t)

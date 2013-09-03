@@ -54,7 +54,7 @@ class GridDetail(QGraphicsScene):
             if face not in seen:
                 seen.add(face)
                 vertices = grid.faces[face]
-                color = QColor(*[s * 255 for s in colors[face]])
+                color = QColor(*[s * 255 for s in colors[face]]) if face in colors else QColor(128, 128, 128)
                 self.addPolygon(hexproto.translated(*offset), QPen(Qt.transparent), color)
                 self.offsetfaces[offset] = face
                 if len(vertices) == 5:
@@ -64,6 +64,11 @@ class GridDetail(QGraphicsScene):
                 source = edges.index(edge)
                 count = 0
                 for border in edges[source + 1:] + edges[:source]:
+                    for b in border:
+                        if len(grid.vertices[b]) < 3:
+                            for neighbor in grid.prev.vertices[face]:
+                                grid.populate(neighbor)
+
                     commonfaces = list((grid.vertices[border[0]] & grid.vertices[border[1]]) - { face })
                     # one common face (if it exists in the grid)
                     if len(commonfaces) > 0:
@@ -82,7 +87,7 @@ class GridDetail(QGraphicsScene):
                     populated.append(ni)
             base = sorted(populated)[len(populated)/2] if len(populated) > 0 else 0
 
-            color = QColor(*[s * 255 for s in colors[face]])
+            color = QColor(*[s * 255 for s in colors[face]]) if face in colors else QColor(128, 128, 128)
             item = self.addPolygon(pentproto.translated(*offset), QPen(Qt.transparent), color)
             self.offsetfaces[offset] = face
             item.setTransformOriginPoint(*offset)
