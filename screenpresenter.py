@@ -72,6 +72,7 @@ class ScreenPresenter(object):
         self._uistack = uistack
 
     def key(self, event):
+        facecount = len(self._detail.grid.faces)
         try:
             direction = {
                 u"'": 'NW',
@@ -84,15 +85,19 @@ class ScreenPresenter(object):
             direction = None
         if direction is not None:
             self._detail.move(direction)
-            return
-        try:
-            rotation = {
-                u'\t': 'CCW',
-                u'p': 'CW'}[event.text()]
-        except KeyError:
-            rotation = None
-        if rotation is not None:
-            self._detail.rotate(rotation)
+        else:
+            try:
+                rotation = {
+                    u'\t': 'CCW',
+                    u'p': 'CW'}[event.text()]
+            except KeyError:
+                rotation = None
+            if rotation is not None:
+                self._detail.rotate(rotation)
+        if len(self._detail.grid.faces) != facecount:
+            for v in self._views:
+                v.update()
+                v.redraw()
 
     def layer(self, depth):
         for v in self._views:
