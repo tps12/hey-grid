@@ -24,7 +24,7 @@ class GridDetail(QGraphicsScene):
         self.colors = colors
         self.center(face)
 
-    def center(self, face, direction=None, edge=None):
+    def center(self, face, orientation=None):
         grid = self.grid
         colors = self.colors
         if face not in grid.faces:
@@ -37,10 +37,9 @@ class GridDetail(QGraphicsScene):
         # initialize queue with face and arbitrarily chosen local North edge:
         # queue items are (face, direction traversed from, edge crossed, offset) tuples
         self.offsetfaces = {}
-        direction = S if direction is None else direction
-        edge = tuple(sorted(grid.faces[face][0:2])) if edge is None else edge
-        self._direction = direction
-        self._edge = edge
+        direction = S if orientation is None else orientation[0]
+        edge = tuple(sorted(grid.faces[face][0:2])) if orientation is None else orientation[1]
+        self._orientation = (direction, edge)
         q = [(face, direction, edge, (0,0))]
         pents = []
         seen = set()
@@ -117,11 +116,12 @@ class GridDetail(QGraphicsScene):
         except KeyError:
             return
         edge = list(set(self.edges(self._center)) & set(self.edges(face)))[0]
-        self.center(face, (dirs.index(direction) + 3) % 6, edge)
+        self.center(face, ((dirs.index(direction) + 3) % 6, edge))
 
     def rotate(self, rotation):
         change = 1 if rotation == 'CW' else -1
-        self.center(self._center, self._direction + change, self._edge)
+        direction, edge = self._orientation
+        self.center(self._center, (direction + change, edge))
 
     def legend(self, label, distance):
         text = self.addText(label)
