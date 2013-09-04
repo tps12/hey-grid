@@ -26,7 +26,6 @@ class GridDetail(QGraphicsScene):
 
     def center(self, face, orientation=None):
         grid = self.grid
-        colors = self.colors
         if face not in grid.faces:
             face = grid.faces.keys()[0]
         self._center = face
@@ -34,12 +33,21 @@ class GridDetail(QGraphicsScene):
         for item in self.items():
             self.removeItem(item)
 
-        # initialize queue with face and arbitrarily chosen local North edge:
-        # queue items are (face, direction traversed from, edge crossed, offset) tuples
-        self.offsetfaces = {}
+        # default to arbitrarily chosen local North edge
         direction = S if orientation is None else orientation[0]
         edge = tuple(sorted(grid.faces[face][0:2])) if orientation is None else orientation[1]
+
+        self.offsetfaces = self.buildgrid(face, direction, edge)
         self._orientation = (direction, edge)
+
+        self.addglyph(u'@')
+        self.update()
+
+    def buildgrid(self, face, direction, edge):
+        grid = self.grid
+        colors = self.colors
+        offsetfaces = {}
+        # queue items are (face, direction traversed from, edge crossed, offset) tuples
         q = [(face, direction, edge, (0,0))]
         pents = []
         seen = set()
@@ -50,7 +58,7 @@ class GridDetail(QGraphicsScene):
                 vertices = grid.faces[face]
                 color = QColor(*[s * 255 for s in colors[face]]) if face in colors else QColor(128, 128, 128)
                 self.addPolygon(hexproto.translated(*offset), QPen(Qt.transparent), color)
-                self.offsetfaces[offset] = face
+                offsetfaces[offset] = face
                 if len(vertices) == 5:
                     pents.append((face, offset))
                 edges = self.edges(face)
@@ -83,7 +91,7 @@ class GridDetail(QGraphicsScene):
 
             color = QColor(*[s * 255 for s in colors[face]]) if face in colors else QColor(128, 128, 128)
             item = self.addPolygon(pentproto.translated(*offset), QPen(Qt.transparent), color)
-            self.offsetfaces[offset] = face
+            offsetfaces[offset] = face
             item.setTransformOriginPoint(*offset)
             item.setRotation(60 * (base + 3))
             polygon = item.polygon()
@@ -99,11 +107,13 @@ class GridDetail(QGraphicsScene):
                     rotated = matrix.map(pentproto.value(0)).toTuple()
                     neighborpolygon.replace(vertex, QPointF(*[rotated[vi] + offset[vi] for vi in range(2)]))
                     neighbor.setPolygon(neighborpolygon)
-        text = self.addText(u'@')
+        return offsetfaces
+
+    def addglyph(self, glyph):
+        text = self.addText(glyph)
         metrics = QFontMetrics(text.font())
         text.translate(-2, sqrt(3)/2 + metrics.height() * 0.1)
         text.scale(0.2, -0.2)
-        self.update()
 
     def edges(self, face):
         vertices = self.grid.faces[face]
