@@ -29,11 +29,6 @@ class GridDetail(QGraphicsScene):
         colors = self.colors
         if face not in grid.faces:
             face = grid.faces.keys()[0]
-        if edge is None and len(grid.faces[face]) == 5:
-            for f in grid.faces:
-                if len(grid.faces[f]) == 6:
-                    face = f
-                    break
         self._center = face
 
         for item in self.items():
