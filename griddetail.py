@@ -43,7 +43,7 @@ class GridDetail(QGraphicsScene):
         self.addglyph(u'@')
         self.update()
 
-    def buildgrid(self, face, direction, edge):
+    def addhexes(self, face, direction, edge):
         grid = self.grid
         colors = self.colors
         offsetfaces = {}
@@ -79,6 +79,10 @@ class GridDetail(QGraphicsScene):
                         if distancesquared(nextoffset) < radiussquared:
                             q.insert(0, (commonfaces[0], (nextdir + 3) % 6, border, nextoffset))
                     count += 1
+        return offsetfaces, pents
+
+    def addpents(self, pents):
+        colors = self.colors
         for face, offset in pents:
             self.removeItem(self.itemAt(*offset))
             populated = []
@@ -91,7 +95,6 @@ class GridDetail(QGraphicsScene):
 
             color = QColor(*[s * 255 for s in colors[face]]) if face in colors else QColor(128, 128, 128)
             item = self.addPolygon(pentproto.translated(*offset), QPen(Qt.transparent), color)
-            offsetfaces[offset] = face
             item.setTransformOriginPoint(*offset)
             item.setRotation(60 * (base + 3))
             polygon = item.polygon()
@@ -107,6 +110,12 @@ class GridDetail(QGraphicsScene):
                     rotated = matrix.map(pentproto.value(0)).toTuple()
                     neighborpolygon.replace(vertex, QPointF(*[rotated[vi] + offset[vi] for vi in range(2)]))
                     neighbor.setPolygon(neighborpolygon)
+
+    def buildgrid(self, face, direction, edge):
+        grid = self.grid
+        colors = self.colors
+        offsetfaces, pents = self.addhexes(face, direction, edge)
+        self.addpents(pents)
         return offsetfaces
 
     def addglyph(self, glyph):
