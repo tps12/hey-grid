@@ -43,9 +43,15 @@ class GridDetail(QGraphicsScene):
         self.addglyph(u'@')
         self.update()
 
+    def shapecolors(self, face):
+        rgb = [s * 255 for s in self.colors[face]] if face in self.colors else 3 * [128]
+        return (QPen(Qt.transparent), QColor(*rgb))
+
+    def addpoly(self, prototype, offset, face):
+        return self.addPolygon(prototype.translated(*offset), *self.shapecolors(face))
+
     def addhexes(self, face, direction, edge):
         grid = self.grid
-        colors = self.colors
         offsetfaces = {}
         # queue items are (face, direction traversed from, edge crossed, offset) tuples
         q = [(face, direction, edge, (0,0))]
@@ -56,8 +62,7 @@ class GridDetail(QGraphicsScene):
             if face not in seen:
                 seen.add(face)
                 vertices = grid.faces[face]
-                color = QColor(*[s * 255 for s in colors[face]]) if face in colors else QColor(128, 128, 128)
-                self.addPolygon(hexproto.translated(*offset), QPen(Qt.transparent), color)
+                self.addpoly(hexproto, offset, face)
                 offsetfaces[offset] = face
                 if len(vertices) == 5:
                     pents.append((face, offset))
@@ -82,7 +87,6 @@ class GridDetail(QGraphicsScene):
         return offsetfaces, pents
 
     def addpents(self, pents):
-        colors = self.colors
         for face, offset in pents:
             self.removeItem(self.itemAt(*offset))
             populated = []
@@ -93,8 +97,7 @@ class GridDetail(QGraphicsScene):
                     populated.append(ni)
             base = sorted(populated)[len(populated)/2] if len(populated) > 0 else 0
 
-            color = QColor(*[s * 255 for s in colors[face]]) if face in colors else QColor(128, 128, 128)
-            item = self.addPolygon(pentproto.translated(*offset), QPen(Qt.transparent), color)
+            item = self.addpoly(pentproto, offset, face)
             item.setTransformOriginPoint(*offset)
             item.setRotation(60 * (base + 3))
             polygon = item.polygon()
