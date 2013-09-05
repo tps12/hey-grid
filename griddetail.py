@@ -22,9 +22,9 @@ class GridDetail(QGraphicsScene):
 
         self.grid = grid
         self.colors = colors
-        self.center(face)
+        self._recenter(face)
 
-    def center(self, face, orientation=None):
+    def _recenter(self, face, orientation=None):
         grid = self.grid
         if face not in grid.faces:
             face = grid.faces.keys()[0]
@@ -37,50 +37,50 @@ class GridDetail(QGraphicsScene):
         direction = S if orientation is None else orientation[0]
         edge = tuple(sorted(grid.faces[face][0:2])) if orientation is None else orientation[1]
 
-        self.offsetfaces = self.buildgrid(face, direction, edge)
+        self.offsetfaces = self._buildgrid(face, direction, edge)
         self._orientation = (direction, edge)
 
-        self.addglyph(u'@')
+        self._addglyph(u'@')
         self.update()
 
-    def shapecolors(self, face):
+    def _shapecolors(self, face):
         rgb = [s * 255 for s in self.colors[face]] if face in self.colors else 3 * [128]
         return (QPen(Qt.transparent), QColor(*rgb))
 
-    def addpoly(self, prototype, offset, face, rotation):
-        item = self.addPolygon(prototype.translated(*offset), *self.shapecolors(face))
+    def _addpoly(self, prototype, offset, face, rotation):
+        item = self.addPolygon(prototype.translated(*offset), *self._shapecolors(face))
         item.setTransformOriginPoint(*offset)
         item.setRotation(rotation)
 
     @staticmethod
-    def rotatedirection(direction, steps):
+    def _rotatedirection(direction, steps):
         return (direction + steps) % 6
 
-    def borders(self, face, direction, edge):
-        edges = self.edges(face)
+    def _borders(self, face, direction, edge):
+        edges = self._edges(face)
         # edges are in CCW order: find edge of origin in list to orient
         source = edges.index(edge)
         count = 0
         for border in edges[source + 1:] + edges[:source]:
-            yield (self.rotatedirection(direction, count + 1), border)
+            yield (self._rotatedirection(direction, count + 1), border)
             count += 1
 
-    def neighbor(self, face, border):
+    def _neighbor(self, face, border):
         # each edge has two common faces (if they exist in the grid)
         common = self.grid.vertices[border[0]] & self.grid.vertices[border[1]]
         if len(common) == 2:
             return list(common - { face })[0]
 
-    def populatevertex(self, face, vertex):
+    def _populatevertex(self, face, vertex):
         if len(self.grid.vertices[vertex]) < 3:
             for neighbor in self.grid.prev.vertices[face]:
                 self.grid.populate(neighbor)
 
     @staticmethod
-    def addoffsets(o1, o2):
+    def _addoffsets(o1, o2):
         return tuple([o1[i] + o2[i] for i in range(2)])
 
-    def addhexes(self, face, direction, edge):
+    def _addhexes(self, face, direction, edge):
         # record mapping of x,y offsets to face locations
         offsetfaces = {}
         # store pentagons for further processing
@@ -94,33 +94,33 @@ class GridDetail(QGraphicsScene):
             if face not in seen:
                 # add tile to the scene
                 seen.add(face)
-                self.addpoly(hexproto, offset, face, 0)
+                self._addpoly(hexproto, offset, face, 0)
 
                 # for each other edge
-                for nextdir, border in self.borders(face, whence, edge):
+                for nextdir, border in self._borders(face, whence, edge):
                     # ensure the neighboring face is populated
                     for v in border:
-                       self.populatevertex(face, v)
-                    nextoffset = self.addoffsets(offset, offsets[nextdir])
+                       self._populatevertex(face, v)
+                    nextoffset = self._addoffsets(offset, offsets[nextdir])
                     if distancesquared(nextoffset) < radiussquared:
                         # enqueue for processing
-                        q.insert(0, (self.neighbor(face, border), (nextdir + 3) % 6, border, nextoffset))
+                        q.insert(0, (self._neighbor(face, border), (nextdir + 3) % 6, border, nextoffset))
                 offsetfaces[offset] = face
                 if len(self.grid.faces[face]) == 5:
                     pentfaces.add((face, offset))
 
         return offsetfaces, pentfaces
 
-    def distortvertex(self, offset, displacement, vertexindex, rotation):
-        item = self.itemAt(*self.addoffsets(offset, displacement))
+    def _distortvertex(self, offset, displacement, vertexindex, rotation):
+        item = self.itemAt(*self._addoffsets(offset, displacement))
         polygon = item.polygon()
         matrix = QMatrix()
         matrix.rotate(rotation)
         rotated = matrix.map(pentproto.value(0)).toTuple()
-        polygon.replace(vertexindex, QPointF(*self.addoffsets(rotated, offset)))
+        polygon.replace(vertexindex, QPointF(*self._addoffsets(rotated, offset)))
         item.setPolygon(polygon)
 
-    def addpents(self, pents):
+    def _addpents(self, pents):
         for face, offset in pents:
             # replace hex tile with a pentagon
             self.removeItem(self.itemAt(*offset))
@@ -130,39 +130,39 @@ class GridDetail(QGraphicsScene):
             # the new vertex in the most aesthetic way
             populated = []
             for ni in range(len(offsets)):
-                if self.itemAt(*self.addoffsets(offset, offsets[ni])) is not None:
+                if self.itemAt(*self._addoffsets(offset, offsets[ni])) is not None:
                     if len(populated) > 0 and populated[-1] + 1 != ni:
                         ni -= 6
                     populated.append(ni)
             base = sorted(populated)[len(populated)/2] if len(populated) > 0 else 0
 
             rotation = 60 * (base + 3)
-            self.addpoly(pentproto, offset, face, rotation)
+            self._addpoly(pentproto, offset, face, rotation)
             for counter in (0, 1):
                 # look for neighbors two clockwise and two counter- from base
                 steps = -2 + 4*counter
-                ni = self.rotatedirection(base, steps)
+                ni = self._rotatedirection(base, steps)
                 if ni in [n%6 for n in populated]:
-                    self.distortvertex(
+                    self._distortvertex(
                         offset,
                         offsets[ni],
-                        self.rotatedirection(3, -ni + counter),
+                        self._rotatedirection(3, -ni + counter),
                         rotation)
 
-    def buildgrid(self, face, direction, edge):
+    def _buildgrid(self, face, direction, edge):
         grid = self.grid
         colors = self.colors
-        offsetfaces, pents = self.addhexes(face, direction, edge)
-        self.addpents(pents)
+        offsetfaces, pents = self._addhexes(face, direction, edge)
+        self._addpents(pents)
         return offsetfaces
 
-    def addglyph(self, glyph):
+    def _addglyph(self, glyph):
         text = self.addText(glyph)
         metrics = QFontMetrics(text.font())
         text.translate(-2, sqrt(3)/2 + metrics.height() * 0.1)
         text.scale(0.2, -0.2)
 
-    def edges(self, face):
+    def _edges(self, face):
         vertices = self.grid.faces[face]
         return [tuple(sorted(vs)) for vs in zip(vertices, vertices[1:] + vertices[0:1])]
 
@@ -172,13 +172,13 @@ class GridDetail(QGraphicsScene):
             face = self.offsetfaces[offset]
         except KeyError:
             return
-        edge = list(set(self.edges(self._center)) & set(self.edges(face)))[0]
-        self.center(face, ((dirs.index(direction) + 3) % 6, edge))
+        edge = list(set(self._edges(self._center)) & set(self._edges(face)))[0]
+        self._recenter(face, ((dirs.index(direction) + 3) % 6, edge))
 
     def rotate(self, rotation):
         change = 1 if rotation == 'CW' else -1
         direction, edge = self._orientation
-        self.center(self._center, (direction + change, edge))
+        self._recenter(self._center, (direction + change, edge))
 
     def legend(self, label, distance):
         text = self.addText(label)
