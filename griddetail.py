@@ -53,7 +53,7 @@ class GridDetail(QGraphicsScene):
         item.setRotation(rotation)
 
     @staticmethod
-    def rotate(direction, steps):
+    def rotatedirection(direction, steps):
         return (direction + steps) % 6
 
     def borders(self, face, direction, edge):
@@ -62,7 +62,7 @@ class GridDetail(QGraphicsScene):
         source = edges.index(edge)
         count = 0
         for border in edges[source + 1:] + edges[:source]:
-            yield (self.rotate(direction, count + 1), border)
+            yield (self.rotatedirection(direction, count + 1), border)
             count += 1
 
     def neighbor(self, face, border):
@@ -111,6 +111,15 @@ class GridDetail(QGraphicsScene):
 
         return offsetfaces, pentfaces
 
+    def distortvertex(self, offset, displacement, vertexindex, rotation):
+        item = self.itemAt(*self.addoffsets(offset, displacement))
+        polygon = item.polygon()
+        matrix = QMatrix()
+        matrix.rotate(rotation)
+        rotated = matrix.map(pentproto.value(0)).toTuple()
+        polygon.replace(vertexindex, QPointF(*self.addoffsets(rotated, offset)))
+        item.setPolygon(polygon)
+
     def addpents(self, pents):
         for face, offset in pents:
             # replace hex tile with a pentagon
@@ -132,16 +141,13 @@ class GridDetail(QGraphicsScene):
             for counter in (0, 1):
                 # look for neighbors two clockwise and two counter- from base
                 steps = -2 + 4*counter
-                ni = self.rotate(base, steps)
+                ni = self.rotatedirection(base, steps)
                 if ni in [n%6 for n in populated]:
-                    neighbor = self.itemAt(*self.addoffsets(offset, offsets[ni]))
-                    neighborpolygon = neighbor.polygon()
-                    vertex = self.rotate(3, -ni + counter)
-                    matrix = QMatrix()
-                    matrix.rotate(rotation)
-                    rotated = matrix.map(pentproto.value(0)).toTuple()
-                    neighborpolygon.replace(vertex, QPointF(*self.addoffsets(rotated, offset)))
-                    neighbor.setPolygon(neighborpolygon)
+                    self.distortvertex(
+                        offset,
+                        offsets[ni],
+                        self.rotatedirection(3, -ni + counter),
+                        rotation)
 
     def buildgrid(self, face, direction, edge):
         grid = self.grid
