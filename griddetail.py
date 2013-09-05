@@ -47,71 +47,100 @@ class GridDetail(QGraphicsScene):
         rgb = [s * 255 for s in self.colors[face]] if face in self.colors else 3 * [128]
         return (QPen(Qt.transparent), QColor(*rgb))
 
-    def addpoly(self, prototype, offset, face):
-        return self.addPolygon(prototype.translated(*offset), *self.shapecolors(face))
+    def addpoly(self, prototype, offset, face, rotation):
+        item = self.addPolygon(prototype.translated(*offset), *self.shapecolors(face))
+        item.setTransformOriginPoint(*offset)
+        item.setRotation(rotation)
+
+    @staticmethod
+    def rotate(direction, steps):
+        return (direction + steps) % 6
+
+    def borders(self, face, direction, edge):
+        edges = self.edges(face)
+        # edges are in CCW order: find edge of origin in list to orient
+        source = edges.index(edge)
+        count = 0
+        for border in edges[source + 1:] + edges[:source]:
+            yield (self.rotate(direction, count + 1), border)
+            count += 1
+
+    def neighbor(self, face, border):
+        # each edge has two common faces (if they exist in the grid)
+        common = self.grid.vertices[border[0]] & self.grid.vertices[border[1]]
+        if len(common) == 2:
+            return list(common - { face })[0]
+
+    def populatevertex(self, face, vertex):
+        if len(self.grid.vertices[vertex]) < 3:
+            for neighbor in self.grid.prev.vertices[face]:
+                self.grid.populate(neighbor)
+
+    @staticmethod
+    def addoffsets(o1, o2):
+        return tuple([o1[i] + o2[i] for i in range(2)])
 
     def addhexes(self, face, direction, edge):
-        grid = self.grid
+        # record mapping of x,y offsets to face locations
         offsetfaces = {}
+        # store pentagons for further processing
+        pentfaces = set()
+
         # queue items are (face, direction traversed from, edge crossed, offset) tuples
         q = [(face, direction, edge, (0,0))]
-        pents = []
         seen = set()
         while len(q) > 0:
             face, whence, edge, offset = q.pop()
             if face not in seen:
+                # add tile to the scene
                 seen.add(face)
-                vertices = grid.faces[face]
-                self.addpoly(hexproto, offset, face)
-                offsetfaces[offset] = face
-                if len(vertices) == 5:
-                    pents.append((face, offset))
-                edges = self.edges(face)
-                # edges are in CCW order: find edge of origin in list to orient
-                source = edges.index(edge)
-                count = 0
-                for border in edges[source + 1:] + edges[:source]:
-                    for b in border:
-                        if len(grid.vertices[b]) < 3:
-                            for neighbor in grid.prev.vertices[face]:
-                                grid.populate(neighbor)
+                self.addpoly(hexproto, offset, face, 0)
 
-                    commonfaces = list((grid.vertices[border[0]] & grid.vertices[border[1]]) - { face })
-                    # one common face (if it exists in the grid)
-                    if len(commonfaces) > 0:
-                        nextdir = (whence + 1 + count) % 6
-                        nextoffset = tuple([offset[i] + offsets[nextdir][i] for i in range(2)])
-                        if distancesquared(nextoffset) < radiussquared:
-                            q.insert(0, (commonfaces[0], (nextdir + 3) % 6, border, nextoffset))
-                    count += 1
-        return offsetfaces, pents
+                # for each other edge
+                for nextdir, border in self.borders(face, whence, edge):
+                    # ensure the neighboring face is populated
+                    for v in border:
+                       self.populatevertex(face, v)
+                    nextoffset = self.addoffsets(offset, offsets[nextdir])
+                    if distancesquared(nextoffset) < radiussquared:
+                        # enqueue for processing
+                        q.insert(0, (self.neighbor(face, border), (nextdir + 3) % 6, border, nextoffset))
+                offsetfaces[offset] = face
+                if len(self.grid.faces[face]) == 5:
+                    pentfaces.add((face, offset))
+
+        return offsetfaces, pentfaces
 
     def addpents(self, pents):
         for face, offset in pents:
+            # replace hex tile with a pentagon
             self.removeItem(self.itemAt(*offset))
+
+            # pentagons are drawn by replacing three sides of a hex with two
+            # new sides: find which neighboring tiles are populated to orient
+            # the new vertex in the most aesthetic way
             populated = []
             for ni in range(len(offsets)):
-                if self.itemAt(*[offset[i] + offsets[ni][i] for i in range(2)]) is not None:
+                if self.itemAt(*self.addoffsets(offset, offsets[ni])) is not None:
                     if len(populated) > 0 and populated[-1] + 1 != ni:
                         ni -= 6
                     populated.append(ni)
             base = sorted(populated)[len(populated)/2] if len(populated) > 0 else 0
 
-            item = self.addpoly(pentproto, offset, face)
-            item.setTransformOriginPoint(*offset)
-            item.setRotation(60 * (base + 3))
-            polygon = item.polygon()
-            # look for neighbors two clockwise and two counter- from base
+            rotation = 60 * (base + 3)
+            self.addpoly(pentproto, offset, face, rotation)
             for counter in (0, 1):
-                ni = (base - 2 + 4 * counter) % 6
+                # look for neighbors two clockwise and two counter- from base
+                steps = -2 + 4*counter
+                ni = self.rotate(base, steps)
                 if ni in [n%6 for n in populated]:
-                    neighbor = self.itemAt(*[offset[i] + offsets[ni][i] for i in range(2)])
+                    neighbor = self.itemAt(*self.addoffsets(offset, offsets[ni]))
                     neighborpolygon = neighbor.polygon()
-                    vertex = (3 - ni + counter) % 6
+                    vertex = self.rotate(3, -ni + counter)
                     matrix = QMatrix()
-                    matrix.rotate(item.rotation())
+                    matrix.rotate(rotation)
                     rotated = matrix.map(pentproto.value(0)).toTuple()
-                    neighborpolygon.replace(vertex, QPointF(*[rotated[vi] + offset[vi] for vi in range(2)]))
+                    neighborpolygon.replace(vertex, QPointF(*self.addoffsets(rotated, offset)))
                     neighbor.setPolygon(neighborpolygon)
 
     def buildgrid(self, face, direction, edge):
