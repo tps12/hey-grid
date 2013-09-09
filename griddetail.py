@@ -17,14 +17,14 @@ radius = 5
 radiussquared = radius * radius * distancesquared(offsets[0])
 
 class GridDetail(object):
-    def __init__(self, grid, colors, face):
+    def __init__(self, grid, colors, face, orientation=None):
         self.scene = QGraphicsScene()
 
         self.grid = grid
         self.colors = colors
-        self._recenter(face)
+        self._recenter(face, orientation)
 
-    def _recenter(self, face, orientation=None):
+    def _recenter(self, face, orientation):
         grid = self.grid
         if face not in grid.faces:
             face = grid.faces.keys()[0]
@@ -173,9 +173,9 @@ class GridDetail(object):
         except KeyError:
             return
         edge = list(set(self._edges(self._center)) & set(self._edges(face)))[0]
-        self._recenter(face, ((dirs.index(direction) + 3) % 6, edge))
+        return GridDetail(self.grid, self.colors, face, ((dirs.index(direction) + 3) % 6, edge))
 
     def rotate(self, rotation):
         change = 1 if rotation == 'CW' else -1
         direction, edge = self._orientation
-        self._recenter(self._center, (direction + change, edge))
+        return GridDetail(self.grid, self.colors, self._center, (direction + change, edge))
