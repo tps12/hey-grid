@@ -84,7 +84,7 @@ class ScreenPresenter(object):
         except KeyError:
             direction = None
         if direction is not None:
-            self._detail.move(direction)
+            detail = self._detail.move(direction)
         else:
             try:
                 rotation = {
@@ -93,7 +93,12 @@ class ScreenPresenter(object):
             except KeyError:
                 rotation = None
             if rotation is not None:
-                self._detail.rotate(rotation)
+                detail = self._detail.rotate(rotation)
+            else:
+                detail = self._detail
+        view = self._detail.scene.views()[0]
+        self._detail = detail
+        view.setScene(self._detail.scene)
         if len(self._detail.grid.faces) != facecount:
             for v in self._views:
                 v.update()
