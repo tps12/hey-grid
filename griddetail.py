@@ -179,13 +179,3 @@ class GridDetail(QGraphicsScene):
         change = 1 if rotation == 'CW' else -1
         direction, edge = self._orientation
         self._recenter(self._center, (direction + change, edge))
-
-    def legend(self, label, distance):
-        text = self.addText(label)
-        text.setDefaultTextColor(QColor(255, 255, 255))
-        metrics = QFontMetrics(text.font())
-        text.translate(-2 * 2 * radius - text.textWidth(), -sqrt(3)/2 * 2 * radius + metrics.height() * 0.1)
-        text.scale(0.2, -0.2)
-        self.addLine(-2 * 2 * radius - text.textWidth(), -sqrt(3)/2 * 2 * radius - metrics.height() * 0.1,
-            -2 * 2 * radius - text.textWidth() + distance, -sqrt(3)/2 * 2 * radius - metrics.height() * 0.1, QPen(QColor(255, 255, 255)))
-        self.update()
