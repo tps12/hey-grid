@@ -1,6 +1,4 @@
-# coding: utf-8
-
-from math import acos, log10, sqrt
+from math import sqrt
 from random import randint, random
 
 from PySide.QtCore import QPointF
@@ -108,52 +106,6 @@ class ScreenPresenter(object):
     def detaillayer(self, depth):
         view = self._detail.views()[0]
         self._detail = GridDetail(self.grids[depth], self.colors[depth], self.grids[depth].faces.keys()[0])
-        # known:
-        #   . size (radius) of globe in meters
-        #   . distance between arbitrary neighboring faces (hexes) in radians
-        # determine:
-        #   . nearest order of magnitude of meters spanned by between one and
-        #     a handful of faces
-        #   . its length in radians
-        radius = 6371000
-        for f, vs in self.grids[depth].faces.iteritems():
-            if len(vs) == 6:
-                break
-        for nf in [n for ns in [self.grids[depth].vertices[v] for v in vs] for n in ns]:
-            if nf != f:
-                notf = nf
-                if nf in self.grids[depth].faces and len(self.grids[depth].faces[nf]) == 6:
-                    break
-        if nf == f:
-            nf = notf
-        df = abs(acos(sum([f[i]*nf[i] for i in range(3)])))
-        lendf = radius * df
-        order = round(log10(lendf))
-        if pow(10, order) / lendf < 0.75:
-            order += 1
-        df = pow(10, order) / lendf
-        labels = {
-            -9: u'1nm',
-            -8: u'10nm',
-            -7: u'100nm',
-            -6: u'1µm',
-            -5: u'10µm',
-            -4: u'100µm',
-            -3: u'1mm',
-            -2: u'1cm',
-            -1: u'10cm',
-            0: u'1m',
-            1: u'10m',
-            2: u'100m',
-            3: u'1km',
-            4: u'10km',
-            5: u'100km',
-            6: u'1000km',
-            7: u'10,000 km',
-            8: u'100,000 km',
-            9: u'1,000,000 km'
-        }
-        self._detail.legend(labels[int(order)], df)
         view.setScene(self._detail)
 
     def rotate(self, value):
