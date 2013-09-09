@@ -53,7 +53,7 @@ class ScreenPresenter(object):
             if len(self.grids[0].faces[face]) == 6:
                 break
         self._detail = GridDetail(self.grids[-1], self.colors[-1], face)
-        view.detail.setScene(self._detail)
+        view.detail.setScene(self._detail.scene)
         view.detail.scale(10, -10)
 
         view.layer.sliderMoved.connect(self.layer)
@@ -119,9 +119,9 @@ class ScreenPresenter(object):
             v.layer(depth)
 
     def detaillayer(self, depth):
-        view = self._detail.views()[0]
+        view = self._detail.scene.views()[0]
         self._detail = GridDetail(self.grids[depth], self.colors[depth], self.grids[depth].faces.keys()[0])
-        view.setScene(self._detail)
+        view.setScene(self._detail.scene)
 
     def rotate(self, value):
         for v in self._views:
