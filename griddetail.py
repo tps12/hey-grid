@@ -16,9 +16,9 @@ def distancesquared(v):
 radius = 5
 radiussquared = radius * radius * distancesquared(offsets[0])
 
-class GridDetail(QGraphicsScene):
+class GridDetail(object):
     def __init__(self, grid, colors, face):
-        QGraphicsScene.__init__(self)
+        self.scene = QGraphicsScene()
 
         self.grid = grid
         self.colors = colors
@@ -30,8 +30,8 @@ class GridDetail(QGraphicsScene):
             face = grid.faces.keys()[0]
         self._center = face
 
-        for item in self.items():
-            self.removeItem(item)
+        for item in self.scene.items():
+            self.scene.removeItem(item)
 
         # default to arbitrarily chosen local North edge
         direction = S if orientation is None else orientation[0]
@@ -41,14 +41,14 @@ class GridDetail(QGraphicsScene):
         self._orientation = (direction, edge)
 
         self._addglyph(u'@')
-        self.update()
+        self.scene.update()
 
     def _shapecolors(self, face):
         rgb = [s * 255 for s in self.colors[face]] if face in self.colors else 3 * [128]
         return (QPen(Qt.transparent), QColor(*rgb))
 
     def _addpoly(self, prototype, offset, face, rotation):
-        item = self.addPolygon(prototype.translated(*offset), *self._shapecolors(face))
+        item = self.scene.addPolygon(prototype.translated(*offset), *self._shapecolors(face))
         item.setTransformOriginPoint(*offset)
         item.setRotation(rotation)
 
@@ -112,7 +112,7 @@ class GridDetail(QGraphicsScene):
         return offsetfaces, pentfaces
 
     def _distortvertex(self, offset, displacement, vertexindex, rotation):
-        item = self.itemAt(*self._addoffsets(offset, displacement))
+        item = self.scene.itemAt(*self._addoffsets(offset, displacement))
         polygon = item.polygon()
         matrix = QMatrix()
         matrix.rotate(rotation)
@@ -123,14 +123,14 @@ class GridDetail(QGraphicsScene):
     def _addpents(self, pents):
         for face, offset in pents:
             # replace hex tile with a pentagon
-            self.removeItem(self.itemAt(*offset))
+            self.scene.removeItem(self.scene.itemAt(*offset))
 
             # pentagons are drawn by replacing three sides of a hex with two
             # new sides: find which neighboring tiles are populated to orient
             # the new vertex in the most aesthetic way
             populated = []
             for ni in range(len(offsets)):
-                if self.itemAt(*self._addoffsets(offset, offsets[ni])) is not None:
+                if self.scene.itemAt(*self._addoffsets(offset, offsets[ni])) is not None:
                     if len(populated) > 0 and populated[-1] + 1 != ni:
                         ni -= 6
                     populated.append(ni)
@@ -157,7 +157,7 @@ class GridDetail(QGraphicsScene):
         return offsetfaces
 
     def _addglyph(self, glyph):
-        text = self.addText(glyph)
+        text = self.scene.addText(glyph)
         metrics = QFontMetrics(text.font())
         text.translate(-2, sqrt(3)/2 + metrics.height() * 0.1)
         text.scale(0.2, -0.2)
