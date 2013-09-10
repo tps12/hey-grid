@@ -57,7 +57,7 @@ class GridDetail(object):
         return (direction + steps) % 6
 
     def _borders(self, face, direction, edge):
-        edges = self._edges(face)
+        edges = self.grid.edges(face)
         # edges are in CCW order: find edge of origin in list to orient
         source = edges.index(edge)
         count = 0
@@ -162,17 +162,13 @@ class GridDetail(object):
         text.translate(-2, sqrt(3)/2 + metrics.height() * 0.1)
         text.scale(0.2, -0.2)
 
-    def _edges(self, face):
-        vertices = self.grid.faces[face]
-        return [tuple(sorted(vs)) for vs in zip(vertices, vertices[1:] + vertices[0:1])]
-
     def move(self, direction):
         offset = offsets[dirs.index(direction)]
         try:
             face = self.offsetfaces[offset]
         except KeyError:
             return
-        edge = list(set(self._edges(self._center)) & set(self._edges(face)))[0]
+        edge = list(set(self.grid.edges(self._center)) & set(self.grid.edges(face)))[0]
         return GridDetail(self.grid, self.colors, face, ((dirs.index(direction) + 3) % 6, edge))
 
     def rotate(self, rotation):
