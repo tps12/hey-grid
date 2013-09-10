@@ -142,3 +142,14 @@ class Grid(object):
     def edges(self, face):
         vertices = self.faces[face]
         return [tuple(sorted(vs)) for vs in zip(vertices, vertices[1:] + vertices[0:1])]
+
+    def borders(self, face, edge):
+        edges = self.edges(face)
+        source = edges.index(edge)
+        return edges[source + 1:] + edges[:source]
+
+    def neighbor(self, face, border):
+        # each edge has two common faces (if they exist in the grid)
+        common = self.vertices[border[0]] & self.vertices[border[1]]
+        if len(common) == 2:
+            return list(common - { face })[0]
