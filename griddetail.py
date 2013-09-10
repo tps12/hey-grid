@@ -37,7 +37,7 @@ class GridDetail(object):
         direction = S if orientation is None else orientation[0]
         edge = tuple(sorted(grid.faces[face][0:2])) if orientation is None else orientation[1]
 
-        self.offsetfaces = self._buildgrid(face, direction, edge)
+        self._buildgrid(face, direction, edge)
         self._orientation = (direction, edge)
 
         self._addglyph(u'@')
@@ -81,8 +81,6 @@ class GridDetail(object):
         return tuple([o1[i] + o2[i] for i in range(2)])
 
     def _addhexes(self, face, direction, edge):
-        # record mapping of x,y offsets to face locations
-        offsetfaces = {}
         # store pentagons for further processing
         pentfaces = set()
 
@@ -105,11 +103,10 @@ class GridDetail(object):
                     if distancesquared(nextoffset) < radiussquared:
                         # enqueue for processing
                         q.insert(0, (self._neighbor(face, border), (nextdir + 3) % 6, border, nextoffset))
-                offsetfaces[offset] = face
                 if len(self.grid.faces[face]) == 5:
                     pentfaces.add((face, offset))
 
-        return offsetfaces, pentfaces
+        return pentfaces
 
     def _distortvertex(self, offset, displacement, vertexindex, rotation):
         item = self.scene.itemAt(*self._addoffsets(offset, displacement))
@@ -152,9 +149,8 @@ class GridDetail(object):
     def _buildgrid(self, face, direction, edge):
         grid = self.grid
         colors = self.colors
-        offsetfaces, pents = self._addhexes(face, direction, edge)
+        pents = self._addhexes(face, direction, edge)
         self._addpents(pents)
-        return offsetfaces
 
     def _addglyph(self, glyph):
         text = self.scene.addText(glyph)
@@ -163,11 +159,13 @@ class GridDetail(object):
         text.scale(0.2, -0.2)
 
     def move(self, direction):
-        offset = offsets[dirs.index(direction)]
-        try:
-            face = self.offsetfaces[offset]
-        except KeyError:
-            return
+        orientation = self._orientation
+        for nextdir, border in self._borders(self._center, *orientation):
+            if nextdir == dirs.index(direction):
+                face = self._neighbor(self._center, border)
+                break
+        else:
+            face = self._neighbor(self._center, orientation[1])
         edge = list(set(self.grid.edges(self._center)) & set(self.grid.edges(face)))[0]
         return GridDetail(self.grid, self.colors, face, ((dirs.index(direction) + 3) % 6, edge))
 
