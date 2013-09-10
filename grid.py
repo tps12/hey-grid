@@ -138,3 +138,7 @@ class Grid(object):
                 vertices = list(reversed(vertices))
             self.faces[vertex] = vertices
             self._addface(vertex)
+
+    def edges(self, face):
+        vertices = self.faces[face]
+        return [tuple(sorted(vs)) for vs in zip(vertices, vertices[1:] + vertices[0:1])]
