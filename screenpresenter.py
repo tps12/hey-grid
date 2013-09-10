@@ -49,10 +49,7 @@ class ScreenPresenter(object):
         for v in self._views:
             view.angles.addWidget(v)
 
-        for face in self.grids[0].faces.keys():
-            if len(self.grids[0].faces[face]) == 6:
-                break
-        self._detail = GridDetail(self.grids[-1], self.colors[-1], face)
+        self._detail = GridDetail(self.grids[-1], self.colors[-1], self.grids[-1].faces.keys()[0])
         view.detail.setScene(self._detail.scene)
         view.detail.scale(10, -10)
 
