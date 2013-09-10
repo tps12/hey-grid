@@ -57,19 +57,11 @@ class GridDetail(object):
         return (direction + steps) % 6
 
     def _borders(self, face, direction, edge):
-        edges = self.grid.edges(face)
         # edges are in CCW order: find edge of origin in list to orient
-        source = edges.index(edge)
         count = 0
-        for border in edges[source + 1:] + edges[:source]:
+        for border in self.grid.borders(face, edge):
             yield (self._rotatedirection(direction, count + 1), border)
             count += 1
-
-    def _neighbor(self, face, border):
-        # each edge has two common faces (if they exist in the grid)
-        common = self.grid.vertices[border[0]] & self.grid.vertices[border[1]]
-        if len(common) == 2:
-            return list(common - { face })[0]
 
     def _populatevertex(self, face, vertex):
         if len(self.grid.vertices[vertex]) < 3:
@@ -102,7 +94,7 @@ class GridDetail(object):
                     nextoffset = self._addoffsets(offset, offsets[nextdir])
                     if distancesquared(nextoffset) < radiussquared:
                         # enqueue for processing
-                        q.insert(0, (self._neighbor(face, border), (nextdir + 3) % 6, border, nextoffset))
+                        q.insert(0, (self.grid.neighbor(face, border), (nextdir + 3) % 6, border, nextoffset))
                 if len(self.grid.faces[face]) == 5:
                     pentfaces.add((face, offset))
 
@@ -162,10 +154,10 @@ class GridDetail(object):
         orientation = self._orientation
         for nextdir, border in self._borders(self._center, *orientation):
             if nextdir == dirs.index(direction):
-                face = self._neighbor(self._center, border)
+                face = self.grid.neighbor(self._center, border)
                 break
         else:
-            face = self._neighbor(self._center, orientation[1])
+            face = self.grid.neighbor(self._center, orientation[1])
         edge = list(set(self.grid.edges(self._center)) & set(self.grid.edges(face)))[0]
         return GridDetail(self.grid, self.colors, face, ((dirs.index(direction) + 3) % 6, edge))
 
