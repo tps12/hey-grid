@@ -16,51 +16,32 @@ def distancesquared(v):
 radius = 5
 radiussquared = radius * radius * distancesquared(offsets[0])
 
-class GridDetail(object):
-    def __init__(self, grid, colors, face, orientation=None):
-        self.scene = QGraphicsScene()
-
+class HexGrid(object):
+    def __init__(self, scene, grid, colors, face, orientation):
         self.grid = grid
         self.colors = colors
-        self._recenter(face, orientation)
 
-    def _recenter(self, face, orientation):
-        grid = self.grid
-        if face not in grid.faces:
-            face = grid.faces.keys()[0]
-        self._center = face
+        items = self._buildgrid(scene, face, *orientation)
 
-        for item in self.scene.items():
-            self.scene.removeItem(item)
+        items.append(self._addglyph(scene, u'@'))
 
-        # default to arbitrarily chosen local North edge
-        direction = S if orientation is None else orientation[0]
-        edge = tuple(sorted(grid.faces[face][0:2])) if orientation is None else orientation[1]
-
-        self._buildgrid(face, direction, edge)
-        self._orientation = (direction, edge)
-
-        self._addglyph(u'@')
-        self.scene.update()
+        self.group = scene.createItemGroup(items)
 
     def _shapecolors(self, face):
         rgb = [s * 255 for s in self.colors[face]] if face in self.colors else 3 * [128]
         return (QPen(Qt.transparent), QColor(*rgb))
 
-    def _addpoly(self, prototype, offset, face, rotation):
-        item = self.scene.addPolygon(prototype.translated(*offset), *self._shapecolors(face))
+    def _addpoly(self, scene, prototype, offset, face, rotation):
+        item = scene.addPolygon(prototype.translated(*offset), *self._shapecolors(face))
         item.setTransformOriginPoint(*offset)
         item.setRotation(rotation)
-
-    @staticmethod
-    def _rotatedirection(direction, steps):
-        return (direction + steps) % 6
+        return item
 
     def _borders(self, face, direction, edge):
         # edges are in CCW order: find edge of origin in list to orient
         count = 0
         for border in self.grid.borders(face, edge):
-            yield (self._rotatedirection(direction, count + 1), border)
+            yield (GridDetail._rotatedirection(direction, count + 1), border)
             count += 1
 
     def _populatevertex(self, face, vertex):
@@ -72,7 +53,8 @@ class GridDetail(object):
     def _addoffsets(o1, o2):
         return tuple([o1[i] + o2[i] for i in range(2)])
 
-    def _addhexes(self, face, direction, edge):
+    def _addhexes(self, scene, face, direction, edge):
+        items = []
         # store pentagons for further processing
         pentfaces = set()
 
@@ -84,7 +66,7 @@ class GridDetail(object):
             if face not in seen:
                 # add tile to the scene
                 seen.add(face)
-                self._addpoly(hexproto, offset, face, 0)
+                items.append(self._addpoly(scene, hexproto, offset, face, 0))
 
                 # for each other edge
                 for nextdir, border in self._borders(face, whence, edge):
@@ -98,10 +80,10 @@ class GridDetail(object):
                 if len(self.grid.faces[face]) == 5:
                     pentfaces.add((face, offset))
 
-        return pentfaces
+        return items, pentfaces
 
-    def _distortvertex(self, offset, displacement, vertexindex, rotation):
-        item = self.scene.itemAt(*self._addoffsets(offset, displacement))
+    def _distortvertex(self, scene, offset, displacement, vertexindex, rotation):
+        item = scene.itemAt(*self._addoffsets(offset, displacement))
         polygon = item.polygon()
         matrix = QMatrix()
         matrix.rotate(rotation)
@@ -109,46 +91,79 @@ class GridDetail(object):
         polygon.replace(vertexindex, QPointF(*self._addoffsets(rotated, offset)))
         item.setPolygon(polygon)
 
-    def _addpents(self, pents):
+    def _addpents(self, scene, olditems, pents):
+        items = list(olditems)
         for face, offset in pents:
             # replace hex tile with a pentagon
-            self.scene.removeItem(self.scene.itemAt(*offset))
+            item = scene.itemAt(*offset)
+            scene.removeItem(item)
+            items.remove(item)
 
             # pentagons are drawn by replacing three sides of a hex with two
             # new sides: find which neighboring tiles are populated to orient
             # the new vertex in the most aesthetic way
             populated = []
             for ni in range(len(offsets)):
-                if self.scene.itemAt(*self._addoffsets(offset, offsets[ni])) is not None:
+                if scene.itemAt(*self._addoffsets(offset, offsets[ni])) is not None:
                     if len(populated) > 0 and populated[-1] + 1 != ni:
                         ni -= 6
                     populated.append(ni)
             base = sorted(populated)[len(populated)/2] if len(populated) > 0 else 0
 
             rotation = 60 * (base + 3)
-            self._addpoly(pentproto, offset, face, rotation)
+            items.append(self._addpoly(scene, pentproto, offset, face, rotation))
             for counter in (0, 1):
                 # look for neighbors two clockwise and two counter- from base
                 steps = -2 + 4*counter
-                ni = self._rotatedirection(base, steps)
+                ni = GridDetail._rotatedirection(base, steps)
                 if ni in [n%6 for n in populated]:
                     self._distortvertex(
+                        scene,
                         offset,
                         offsets[ni],
-                        self._rotatedirection(3, -ni + counter),
+                        GridDetail._rotatedirection(3, -ni + counter),
                         rotation)
+        return items
 
-    def _buildgrid(self, face, direction, edge):
+    def _buildgrid(self, scene, face, direction, edge):
         grid = self.grid
         colors = self.colors
-        pents = self._addhexes(face, direction, edge)
-        self._addpents(pents)
+        items, pents = self._addhexes(scene, face, direction, edge)
+        return self._addpents(scene, items, pents)
 
-    def _addglyph(self, glyph):
-        text = self.scene.addText(glyph)
+    def _addglyph(self, scene, glyph):
+        text = scene.addText(glyph)
         metrics = QFontMetrics(text.font())
         text.translate(-2, sqrt(3)/2 + metrics.height() * 0.1)
         text.scale(0.2, -0.2)
+        return text
+
+class GridDetail(object):
+    def __init__(self, grid, colors, center, orientation=None):
+        self.scene = QGraphicsScene()
+
+        self.grid = grid
+        self.colors = colors
+
+        self._center = center
+
+        # default to arbitrarily chosen local North edge
+        self._orientation = (S, tuple(sorted(grid.faces[center][0:2]))) if orientation is None else orientation
+
+        self._groups = [
+            HexGrid(self.scene, self.grid, self.colors, self._center, self._orientation).group
+        ]
+
+    @staticmethod
+    def _rotatedirection(direction, steps):
+        return (direction + steps) % 6
+
+    def _borders(self, face, direction, edge):
+        # edges are in CCW order: find edge of origin in list to orient
+        count = 0
+        for border in self.grid.borders(face, edge):
+            yield (self._rotatedirection(direction, count + 1), border)
+            count += 1
 
     def move(self, direction):
         orientation = self._orientation
