@@ -13,11 +13,14 @@ pentproto = QPolygonF([QPointF(*cs) for cs in [(0, sqrt(3))] + vs[2:]])
 def distancesquared(v):
     return sum([vi * vi for vi in v])
 
+def rotatedirection(direction, steps):
+    return (direction + steps) % 6
+
 def borders(grid, face, direction, edge):
     # edges are in CCW order: find edge of origin in list to orient
     count = 0
     for border in grid.borders(face, edge):
-        yield (GridDetail._rotatedirection(direction, count + 1), border)
+        yield (rotatedirection(direction, count + 1), border)
         count += 1
 
 radius = 5
@@ -112,13 +115,13 @@ class HexGrid(object):
             for counter in (0, 1):
                 # look for neighbors two clockwise and two counter- from base
                 steps = -2 + 4*counter
-                ni = GridDetail._rotatedirection(base, steps)
+                ni = rotatedirection(base, steps)
                 if ni in [n%6 for n in populated]:
                     self._distortvertex(
                         scene,
                         offset,
                         offsets[ni],
-                        GridDetail._rotatedirection(3, -ni + counter),
+                        rotatedirection(3, -ni + counter),
                         rotation)
         return items
 
@@ -148,10 +151,6 @@ class GridDetail(object):
         self._groups = [
             HexGrid(self.scene, self.grid, self.colors, self._center, self._orientation).group
         ]
-
-    @staticmethod
-    def _rotatedirection(direction, steps):
-        return (direction + steps) % 6
 
     def move(self, direction):
         orientation = self._orientation
