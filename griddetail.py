@@ -13,6 +13,13 @@ pentproto = QPolygonF([QPointF(*cs) for cs in [(0, sqrt(3))] + vs[2:]])
 def distancesquared(v):
     return sum([vi * vi for vi in v])
 
+def borders(grid, face, direction, edge):
+    # edges are in CCW order: find edge of origin in list to orient
+    count = 0
+    for border in grid.borders(face, edge):
+        yield (GridDetail._rotatedirection(direction, count + 1), border)
+        count += 1
+
 radius = 5
 radiussquared = radius * radius * distancesquared(offsets[0])
 
@@ -33,13 +40,6 @@ class HexGrid(object):
         item.setTransformOriginPoint(*offset)
         item.setRotation(rotation)
         return item
-
-    def _borders(self, grid, face, direction, edge):
-        # edges are in CCW order: find edge of origin in list to orient
-        count = 0
-        for border in grid.borders(face, edge):
-            yield (GridDetail._rotatedirection(direction, count + 1), border)
-            count += 1
 
     def _populatevertex(self, grid, face, vertex):
         if len(grid.vertices[vertex]) < 3:
@@ -66,7 +66,7 @@ class HexGrid(object):
                 items.append(self._addpoly(scene, colors, hexproto, offset, face, 0))
 
                 # for each other edge
-                for nextdir, border in self._borders(grid, face, whence, edge):
+                for nextdir, border in borders(grid, face, whence, edge):
                     # ensure the neighboring face is populated
                     for v in border:
                        self._populatevertex(grid, face, v)
@@ -153,16 +153,9 @@ class GridDetail(object):
     def _rotatedirection(direction, steps):
         return (direction + steps) % 6
 
-    def _borders(self, face, direction, edge):
-        # edges are in CCW order: find edge of origin in list to orient
-        count = 0
-        for border in self.grid.borders(face, edge):
-            yield (self._rotatedirection(direction, count + 1), border)
-            count += 1
-
     def move(self, direction):
         orientation = self._orientation
-        for nextdir, border in self._borders(self._center, *orientation):
+        for nextdir, border in borders(self.grid, self._center, *orientation):
             if nextdir == dirs.index(direction):
                 face = self.grid.neighbor(self._center, border)
                 break
