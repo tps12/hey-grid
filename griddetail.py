@@ -18,42 +18,39 @@ radiussquared = radius * radius * distancesquared(offsets[0])
 
 class HexGrid(object):
     def __init__(self, scene, grid, colors, face, orientation):
-        self.grid = grid
-        self.colors = colors
-
-        items = self._buildgrid(scene, face, *orientation)
+        items = self._buildgrid(scene, grid, colors, face, *orientation)
 
         items.append(self._addglyph(scene, u'@'))
 
         self.group = scene.createItemGroup(items)
 
-    def _shapecolors(self, face):
-        rgb = [s * 255 for s in self.colors[face]] if face in self.colors else 3 * [128]
+    def _shapecolors(self, colors, face):
+        rgb = [s * 255 for s in colors[face]] if face in colors else 3 * [128]
         return (QPen(Qt.transparent), QColor(*rgb))
 
-    def _addpoly(self, scene, prototype, offset, face, rotation):
-        item = scene.addPolygon(prototype.translated(*offset), *self._shapecolors(face))
+    def _addpoly(self, scene, colors, prototype, offset, face, rotation):
+        item = scene.addPolygon(prototype.translated(*offset), *self._shapecolors(colors, face))
         item.setTransformOriginPoint(*offset)
         item.setRotation(rotation)
         return item
 
-    def _borders(self, face, direction, edge):
+    def _borders(self, grid, face, direction, edge):
         # edges are in CCW order: find edge of origin in list to orient
         count = 0
-        for border in self.grid.borders(face, edge):
+        for border in grid.borders(face, edge):
             yield (GridDetail._rotatedirection(direction, count + 1), border)
             count += 1
 
-    def _populatevertex(self, face, vertex):
-        if len(self.grid.vertices[vertex]) < 3:
-            for neighbor in self.grid.prev.vertices[face]:
-                self.grid.populate(neighbor)
+    def _populatevertex(self, grid, face, vertex):
+        if len(grid.vertices[vertex]) < 3:
+            for neighbor in grid.prev.vertices[face]:
+                grid.populate(neighbor)
 
     @staticmethod
     def _addoffsets(o1, o2):
         return tuple([o1[i] + o2[i] for i in range(2)])
 
-    def _addhexes(self, scene, face, direction, edge):
+    def _addhexes(self, scene, grid, colors, face, direction, edge):
         items = []
         # store pentagons for further processing
         pentfaces = set()
@@ -66,18 +63,18 @@ class HexGrid(object):
             if face not in seen:
                 # add tile to the scene
                 seen.add(face)
-                items.append(self._addpoly(scene, hexproto, offset, face, 0))
+                items.append(self._addpoly(scene, colors, hexproto, offset, face, 0))
 
                 # for each other edge
-                for nextdir, border in self._borders(face, whence, edge):
+                for nextdir, border in self._borders(grid, face, whence, edge):
                     # ensure the neighboring face is populated
                     for v in border:
-                       self._populatevertex(face, v)
+                       self._populatevertex(grid, face, v)
                     nextoffset = self._addoffsets(offset, offsets[nextdir])
                     if distancesquared(nextoffset) < radiussquared:
                         # enqueue for processing
-                        q.insert(0, (self.grid.neighbor(face, border), (nextdir + 3) % 6, border, nextoffset))
-                if len(self.grid.faces[face]) == 5:
+                        q.insert(0, (grid.neighbor(face, border), (nextdir + 3) % 6, border, nextoffset))
+                if len(grid.faces[face]) == 5:
                     pentfaces.add((face, offset))
 
         return items, pentfaces
@@ -91,7 +88,7 @@ class HexGrid(object):
         polygon.replace(vertexindex, QPointF(*self._addoffsets(rotated, offset)))
         item.setPolygon(polygon)
 
-    def _addpents(self, scene, olditems, pents):
+    def _addpents(self, scene, colors, olditems, pents):
         items = list(olditems)
         for face, offset in pents:
             # replace hex tile with a pentagon
@@ -111,7 +108,7 @@ class HexGrid(object):
             base = sorted(populated)[len(populated)/2] if len(populated) > 0 else 0
 
             rotation = 60 * (base + 3)
-            items.append(self._addpoly(scene, pentproto, offset, face, rotation))
+            items.append(self._addpoly(scene, colors, pentproto, offset, face, rotation))
             for counter in (0, 1):
                 # look for neighbors two clockwise and two counter- from base
                 steps = -2 + 4*counter
@@ -125,11 +122,9 @@ class HexGrid(object):
                         rotation)
         return items
 
-    def _buildgrid(self, scene, face, direction, edge):
-        grid = self.grid
-        colors = self.colors
-        items, pents = self._addhexes(scene, face, direction, edge)
-        return self._addpents(scene, items, pents)
+    def _buildgrid(self, scene, grid, colors, face, direction, edge):
+        items, pents = self._addhexes(scene, grid, colors, face, direction, edge)
+        return self._addpents(scene, colors, items, pents)
 
     def _addglyph(self, scene, glyph):
         text = scene.addText(glyph)
