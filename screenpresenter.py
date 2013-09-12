@@ -49,12 +49,13 @@ class ScreenPresenter(object):
         for v in self._views:
             view.angles.addWidget(v)
 
-        self._detail = GridDetail(self.grids[-1], self.colors[-1], self.grids[-1].faces.keys()[0])
-        view.detail.setScene(self._detail.scene)
-        view.detail.scale(10, 10)
+        self._detailview = view.detail
+        self._detailview.scale(10, 10)
 
         view.layer.sliderMoved.connect(self.layer)
         view.detailLayer.sliderMoved.connect(self.detaillayer)
+
+        self.detaillayer(-1)
 
         widget.keyPressEvent = self.key
 
@@ -93,9 +94,8 @@ class ScreenPresenter(object):
                 detail = self._detail.rotate(rotation)
             else:
                 detail = self._detail
-        view = self._detail.scene.views()[0]
         self._detail = detail
-        view.setScene(self._detail.scene)
+        self._detailview.setScene(self._detail.scene)
         if len(self._detail.grid.faces) != facecount:
             for v in self._views:
                 v.update()
@@ -106,9 +106,8 @@ class ScreenPresenter(object):
             v.layer(depth)
 
     def detaillayer(self, depth):
-        view = self._detail.scene.views()[0]
         self._detail = GridDetail(self.grids[depth], self.colors[depth], self.grids[depth].faces.keys()[0])
-        view.setScene(self._detail.scene)
+        self._detailview.setScene(self._detail.scene)
 
     def rotate(self, value):
         for v in self._views:
