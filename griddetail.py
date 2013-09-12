@@ -136,6 +136,15 @@ class HexGrid(object):
         text.scale(0.2, 0.2)
         return text
 
+class Legend(object):
+    def __init__(self, scene):
+        text = scene.addText(u'I am legend')
+        text.setDefaultTextColor(QColor(255, 255, 255))
+        metrics = QFontMetrics(text.font())
+        text.translate(-2, -sqrt(3)/2 - metrics.height() * 0.1)
+        text.scale(0.2, 0.2)
+        self.group = scene.createItemGroup([text])
+
 class GridDetail(object):
     def __init__(self, grid, colors, center, orientation=None):
         self.scene = QGraphicsScene()
@@ -149,8 +158,12 @@ class GridDetail(object):
         self._orientation = (S, tuple(sorted(grid.faces[center][0:2]))) if orientation is None else orientation
 
         self._groups = [
-            HexGrid(self.scene, self.grid, self.colors, self._center, self._orientation).group
+            HexGrid(self.scene, self.grid, self.colors, self._center, self._orientation).group,
+            Legend(self.scene).group
         ]
+        gridsize, legendsize = [group.boundingRect() for group in self._groups]
+        self._groups[-1].translate(gridsize.x() - legendsize.width()/2, gridsize.y() + gridsize.height() + legendsize.height()/2)
+        self._groups[-1].setZValue(1)
 
     def move(self, direction):
         orientation = self._orientation
