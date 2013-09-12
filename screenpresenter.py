@@ -51,7 +51,7 @@ class ScreenPresenter(object):
 
         self._detail = GridDetail(self.grids[-1], self.colors[-1], self.grids[-1].faces.keys()[0])
         view.detail.setScene(self._detail.scene)
-        view.detail.scale(10, -10)
+        view.detail.scale(10, 10)
 
         view.layer.sliderMoved.connect(self.layer)
         view.detailLayer.sliderMoved.connect(self.detaillayer)

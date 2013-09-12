@@ -5,10 +5,10 @@ from PySide.QtGui import QColor, QFontMetrics, QGraphicsScene, QMatrix, QPen, QP
 
 N, NW, SW, S, SE, NE = range(6)
 dirs = ['N', 'NW', 'SW', 'S', 'SE', 'NE']
-vs = [(-1, sqrt(3)), (1, sqrt(3)), (2, 0), (1, -sqrt(3)), (-1, -sqrt(3)), (-2, 0)]
-offsets = [(0, 2*sqrt(3)), (-3, sqrt(3)), (-3, -sqrt(3)), (0, -2*sqrt(3)), (3, -sqrt(3)), (3, sqrt(3))]
+vs = [(-1, -sqrt(3)), (1, -sqrt(3)), (2, 0), (1, sqrt(3)), (-1, sqrt(3)), (-2, 0)]
+offsets = [(0, -2*sqrt(3)), (-3, -sqrt(3)), (-3, sqrt(3)), (0, 2*sqrt(3)), (3, sqrt(3)), (3, -sqrt(3))]
 hexproto = QPolygonF([QPointF(*cs) for cs in vs])
-pentproto = QPolygonF([QPointF(*cs) for cs in [(0, sqrt(3))] + vs[2:]])
+pentproto = QPolygonF([QPointF(*cs) for cs in [(0, -sqrt(3))] + vs[2:]])
 
 def distancesquared(v):
     return sum([vi * vi for vi in v])
@@ -110,7 +110,7 @@ class HexGrid(object):
                     populated.append(ni)
             base = sorted(populated)[len(populated)/2] if len(populated) > 0 else 0
 
-            rotation = 60 * (base + 3)
+            rotation = -60 * (base + 3)
             items.append(self._addpoly(scene, colors, pentproto, offset, face, rotation))
             for counter in (0, 1):
                 # look for neighbors two clockwise and two counter- from base
@@ -132,8 +132,8 @@ class HexGrid(object):
     def _addglyph(self, scene, glyph):
         text = scene.addText(glyph)
         metrics = QFontMetrics(text.font())
-        text.translate(-2, sqrt(3)/2 + metrics.height() * 0.1)
-        text.scale(0.2, -0.2)
+        text.translate(-2, -sqrt(3)/2 - metrics.height() * 0.1)
+        text.scale(0.2, 0.2)
         return text
 
 class GridDetail(object):
