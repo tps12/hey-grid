@@ -1,4 +1,6 @@
-from math import sqrt
+# coding: utf-8
+
+from math import acos, atan2, pi, sqrt
 
 from PySide.QtCore import QPointF, Qt
 from PySide.QtGui import QColor, QFontMetrics, QGraphicsScene, QMatrix, QPen, QPolygonF
@@ -23,14 +25,27 @@ def borders(grid, face, direction, edge):
         yield (rotatedirection(direction, count + 1), border)
         count += 1
 
+def dot(v1, v2):
+    return sum([v1[i] * v2[i] for i in range(len(v1))])
+
 radius = 5
 radiussquared = radius * radius * distancesquared(offsets[0])
 
 class HexGrid(object):
-    def __init__(self, scene, grid, colors, face, orientation):
-        items = self._buildgrid(scene, grid, colors, face, *orientation)
+    def __init__(self, scene, grid, colors, face, orientation, (poilocation, poilabel)):
+        faceitems = self._buildgrid(scene, grid, colors, face, *orientation)
 
-        items.append(self._addglyph(scene, u'@'))
+        items = faceitems.values()
+        items.append(self._addglyph(scene, u'@', faceitems[face]))
+
+        edgelength = abs(acos(dot(*orientation[1])))
+        ingrid, item = self._findpointofinterest(faceitems, poilocation, edgelength)
+        if ingrid:
+            items.append(self._addglyph(scene, poilabel, item))
+            self.poidirection = None
+        else:
+            loc = item.boundingRect().center()
+            self.poidirection = 90 + 180 * atan2(loc.y(), loc.x()) / pi
 
         self.group = scene.createItemGroup(items)
 
@@ -53,8 +68,16 @@ class HexGrid(object):
     def _addoffsets(o1, o2):
         return tuple([o1[i] + o2[i] for i in range(2)])
 
+    def _findpointofinterest(self, faceitems, location, r):
+        mindist = float('inf'), None
+        for face, item in faceitems.iteritems():
+            dist = abs(acos(dot(face, location)))
+            if dist < mindist[0] or (dist == mindist[0] and face < mindist[1]):
+                mindist = dist, face, item
+        return mindist[0] < r, mindist[2]
+
     def _addhexes(self, scene, grid, colors, face, direction, edge):
-        items = []
+        faceitems = {}
         # store pentagons for further processing
         pentfaces = set()
 
@@ -66,7 +89,7 @@ class HexGrid(object):
             if face not in seen:
                 # add tile to the scene
                 seen.add(face)
-                items.append(self._addpoly(scene, colors, hexproto, offset, face, 0))
+                faceitems[face] = self._addpoly(scene, colors, hexproto, offset, face, 0)
 
                 # for each other edge
                 for nextdir, border in borders(grid, face, whence, edge):
@@ -80,7 +103,7 @@ class HexGrid(object):
                 if len(grid.faces[face]) == 5:
                     pentfaces.add((face, offset))
 
-        return items, pentfaces
+        return faceitems, pentfaces
 
     def _distortvertex(self, scene, offset, displacement, vertexindex, rotation):
         item = scene.itemAt(*self._addoffsets(offset, displacement))
@@ -91,13 +114,12 @@ class HexGrid(object):
         polygon.replace(vertexindex, QPointF(*self._addoffsets(rotated, offset)))
         item.setPolygon(polygon)
 
-    def _addpents(self, scene, colors, olditems, pents):
-        items = list(olditems)
+    def _addpents(self, scene, colors, oldfaceitems, pents):
+        faceitems = dict(oldfaceitems)
         for face, offset in pents:
             # replace hex tile with a pentagon
             item = scene.itemAt(*offset)
             scene.removeItem(item)
-            items.remove(item)
 
             # pentagons are drawn by replacing three sides of a hex with two
             # new sides: find which neighboring tiles are populated to orient
@@ -111,7 +133,7 @@ class HexGrid(object):
             base = sorted(populated)[len(populated)/2] if len(populated) > 0 else 0
 
             rotation = -60 * (base + 3)
-            items.append(self._addpoly(scene, colors, pentproto, offset, face, rotation))
+            faceitems[face] = self._addpoly(scene, colors, pentproto, offset, face, rotation)
             for counter in (0, 1):
                 # look for neighbors two clockwise and two counter- from base
                 steps = -2 + 4*counter
@@ -123,30 +145,42 @@ class HexGrid(object):
                         offsets[ni],
                         rotatedirection(3, -ni + counter),
                         rotation)
-        return items
+        return faceitems
 
     def _buildgrid(self, scene, grid, colors, face, direction, edge):
-        items, pents = self._addhexes(scene, grid, colors, face, direction, edge)
-        return self._addpents(scene, colors, items, pents)
+        faceitems, pents = self._addhexes(scene, grid, colors, face, direction, edge)
+        return self._addpents(scene, colors, faceitems, pents)
 
-    def _addglyph(self, scene, glyph):
+    def _addglyph(self, scene, glyph, item):
+        offset = item.boundingRect().center().toTuple()
         text = scene.addText(glyph)
         metrics = QFontMetrics(text.font())
-        text.translate(-2, -sqrt(3)/2 - metrics.height() * 0.1)
+        text.translate(offset[0] - metrics.width(glyph) * 0.2, offset[1] - metrics.height() * 0.2)
         text.scale(0.2, 0.2)
         return text
 
 class Legend(object):
-    def __init__(self, scene):
-        text = scene.addText(u'I am legend')
+    def __init__(self, scene, (poidirection, poilabel, poimark)):
+        label = self._addtext(scene, poilabel + u' ', (0, 0), 0)
+        if poidirection is None:
+            poidirection = 0
+        else:
+            poimark = u'↑'
+        key = self._addtext(scene, poimark, (label.boundingRect().width() * 0.2, 0), poidirection)
+        self.group = scene.createItemGroup([label, key])
+
+    def _addtext(self, scene, content, offset, rotation):
+        text = scene.addText(content)
         text.setDefaultTextColor(QColor(255, 255, 255))
         metrics = QFontMetrics(text.font())
-        text.translate(-2, -sqrt(3)/2 - metrics.height() * 0.1)
+        text.translate(offset[0] - 2, offset[1] - sqrt(3)/2 - metrics.height() * 0.1)
         text.scale(0.2, 0.2)
-        self.group = scene.createItemGroup([text])
+        text.setTransformOriginPoint(*text.boundingRect().center().toTuple())
+        text.setRotation(rotation)
+        return text
 
 class GridDetail(object):
-    def __init__(self, grid, colors, center, orientation=None):
+    def __init__(self, grid, colors, center, (poilocation, poilabel), orientation=None):
         self.scene = QGraphicsScene()
 
         self.grid = grid
@@ -154,13 +188,16 @@ class GridDetail(object):
 
         self._center = center
 
+        self._pointofinterest = (poilocation, poilabel)
+
         # default to arbitrarily chosen local North edge
         self._orientation = (S, tuple(sorted(grid.faces[center][0:2]))) if orientation is None else orientation
 
-        self._groups = [
-            HexGrid(self.scene, self.grid, self.colors, self._center, self._orientation).group,
-            Legend(self.scene).group
-        ]
+        poimark = u'★'
+        hexgrid = HexGrid(self.scene, self.grid, self.colors, self._center, self._orientation, (poilocation, poimark))
+        legend = Legend(self.scene, (hexgrid.poidirection, poilabel, poimark))
+
+        self._groups = [obj.group for obj in hexgrid, legend]
         gridsize, legendsize = [group.boundingRect() for group in self._groups]
         self._groups[-1].translate(gridsize.x() - legendsize.width()/2, gridsize.y() + gridsize.height() + legendsize.height()/2)
         self._groups[-1].setZValue(1)
@@ -174,9 +211,9 @@ class GridDetail(object):
         else:
             face = self.grid.neighbor(self._center, orientation[1])
         edge = list(set(self.grid.edges(self._center)) & set(self.grid.edges(face)))[0]
-        return GridDetail(self.grid, self.colors, face, ((dirs.index(direction) + 3) % 6, edge))
+        return GridDetail(self.grid, self.colors, face, self._pointofinterest, ((dirs.index(direction) + 3) % 6, edge))
 
     def rotate(self, rotation):
         change = 1 if rotation == 'CW' else -1
         direction, edge = self._orientation
-        return GridDetail(self.grid, self.colors, self._center, (direction + change, edge))
+        return GridDetail(self.grid, self.colors, self._center, self._pointofinterest, (direction + change, edge))
