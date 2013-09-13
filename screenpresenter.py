@@ -121,7 +121,7 @@ class ScreenPresenter(object):
             v.layer(depth)
 
     def detaillayer(self, depth):
-        self._detail = GridDetail(self.grids[depth], self.colors[depth], self.grids[depth].faces.keys()[0])
+        self._detail = GridDetail(self.grids[depth], self.colors[depth], self.grids[depth].faces.keys()[0], ((0,-1,0), u'N'))
         self._detailview.setScene(self._detail.scene)
 
     def rotate(self, value):
