@@ -1,4 +1,6 @@
-from math import sqrt
+# coding: utf-8
+
+from math import log10, sqrt
 from random import randint, random
 
 from PySide.QtCore import QEvent, QPointF
@@ -120,8 +122,39 @@ class ScreenPresenter(object):
         for v in self._views:
             v.layer(depth)
 
+    def prefix(self, order):
+        prefices = [
+            (-9, u'n'),
+            (-6, u'µ'),
+            (-3, u'm'),
+            (-2, u'c'),
+            (0, None),
+            (3, u'k')
+        ]
+        if order <= prefices[0][0]:
+            return order - prefices[0][0], prefices[0][1]
+        if order >= prefices[-1][0]:
+            return order - prefices[-1][0], prefices[-1][1]
+        for i in range(1, len(prefices)):
+            if order < prefices[i][0]:
+                return order - prefices[i-1][0], prefices[i-1][1]
+
+    def labelscale(self, order, unit):
+        offset, prefix = self.prefix(order)
+        return u'{:,}{}{}'.format(pow(10, offset), prefix if prefix is not None else u'', unit)
+
+    def scale(self, grid, radius, unit):
+        dth = grid.scale()
+        ds = radius * grid.scale()
+        order = int(round(log10(ds)))
+        if pow(10, order) / ds > 1.125:
+            order -= 1
+        dth = pow(10, order) / ds
+        label1, label10 = [self.labelscale(o, unit) for o in (order, order+1)]
+        return dth, label1, label10
+
     def detaillayer(self, depth):
-        self._detail = GridDetail(self.grids[depth], self.colors[depth], self.grids[depth].faces.keys()[0], ((0,-1,0), u'N'))
+        self._detail = GridDetail(self.grids[depth], self.colors[depth], self.grids[depth].faces.keys()[0], ((0,-1,0), u'N'), self.scale(self.grids[depth], 6371000, u'm'))
         self._detailview.setScene(self._detail.scene)
 
     def rotate(self, value):
