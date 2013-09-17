@@ -153,3 +153,20 @@ class Grid(object):
         common = self.vertices[border[0]] & self.vertices[border[1]]
         if len(common) == 2:
             return list(common - { face })[0]
+
+    # get the radian distance between adjacent faces
+    # neighboring hexes are used for grid sizes > 0
+    def scale(self):
+        found = False
+        for f, vs in self.faces.iteritems():
+            if len(vs) == 6:
+                for n in [self.neighbor(f, e) for e in self.edges(f)]:
+                    if n in self.faces and len(self.faces[n]) == 6:
+                        found = True
+                        break
+                if found:
+                    break
+        else:
+            f = self.faces.keys()[0]
+            n = self.neighbor(f, self.edges(f)[0])
+        return abs(math.acos(dot(f, n)))
