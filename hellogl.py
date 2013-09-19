@@ -150,7 +150,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 		GL.glNewList(genList, GL.GL_COMPILE)
 
 		for t, vs in grid.faces.iteritems():
-			color = colors[t] if t in colors else (0.5, 0.5, 0.5)
+			color = colors[t]
                         GL.glMaterialfv(GL.GL_FRONT, GL.GL_DIFFUSE, color)
 			GL.glBegin(GL.GL_TRIANGLE_FAN)
 			n = normal(t)

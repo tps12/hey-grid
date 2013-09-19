@@ -39,7 +39,7 @@ class HexGrid(object):
         self.group = scene.createItemGroup(items)
 
     def _shapecolors(self, colors, face):
-        rgb = [s * 255 for s in colors[face]] if face in colors else 3 * [128]
+        rgb = [s * 255 for s in colors[face]]
         return (QPen(Qt.transparent), QColor(*rgb))
 
     def _addpoly(self, scene, colors, prototype, offset, face, rotation):
