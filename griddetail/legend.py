@@ -4,8 +4,7 @@ from math import sqrt
 
 from PySide.QtGui import QColor, QFontMetrics, QPen
 
-N, NW, SW, S, SE, NE = range(6)
-offsets = [(0, -2*sqrt(3)), (-3, -sqrt(3)), (-3, sqrt(3)), (0, 2*sqrt(3)), (3, sqrt(3)), (3, -sqrt(3))]
+from common import N, NW, NE, S, SE, SW, offsets
 
 class Legend(object):
     def __init__(self, scene, poiinfo, scaleinfo):

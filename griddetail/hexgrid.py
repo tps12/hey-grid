@@ -5,25 +5,14 @@ from math import acos, atan2, pi, sqrt
 from PySide.QtCore import QPointF, Qt
 from PySide.QtGui import QColor, QFontMetrics, QMatrix, QPen, QPolygonF
 
-N, NW, SW, S, SE, NE = range(6)
-dirs = ['N', 'NW', 'SW', 'S', 'SE', 'NE']
+from common import N, NW, NE, S, SE, SW, offsets, borders, rotatedirection
+
 vs = [(-1, -sqrt(3)), (1, -sqrt(3)), (2, 0), (1, sqrt(3)), (-1, sqrt(3)), (-2, 0)]
-offsets = [(0, -2*sqrt(3)), (-3, -sqrt(3)), (-3, sqrt(3)), (0, 2*sqrt(3)), (3, sqrt(3)), (3, -sqrt(3))]
 hexproto = QPolygonF([QPointF(*cs) for cs in vs])
 pentproto = QPolygonF([QPointF(*cs) for cs in [(0, -sqrt(3))] + vs[2:]])
 
 def distancesquared(v):
     return sum([vi * vi for vi in v])
-
-def rotatedirection(direction, steps):
-    return (direction + steps) % 6
-
-def borders(grid, face, direction, edge):
-    # edges are in CCW order: find edge of origin in list to orient
-    count = 0
-    for border in grid.borders(face, edge):
-        yield (rotatedirection(direction, count + 1), border)
-        count += 1
 
 def dot(v1, v2):
     return sum([v1[i] * v2[i] for i in range(len(v1))])
