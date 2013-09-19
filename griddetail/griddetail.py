@@ -5,18 +5,7 @@ from PySide.QtGui import QGraphicsScene
 from hexgrid import HexGrid
 from legend import Legend
 
-N, NW, SW, S, SE, NE = range(6)
-dirs = ['N', 'NW', 'SW', 'S', 'SE', 'NE']
-
-def rotatedirection(direction, steps):
-    return (direction + steps) % 6
-
-def borders(grid, face, direction, edge):
-    # edges are in CCW order: find edge of origin in list to orient
-    count = 0
-    for border in grid.borders(face, edge):
-        yield (rotatedirection(direction, count + 1), border)
-        count += 1
+from common import N, NW, NE, S, SE, SW, dirs, borders, rotatedirection
 
 class GridDetail(object):
     def __init__(self, grid, colors, center, (poilocation, poilabel), scale, orientation=None):
