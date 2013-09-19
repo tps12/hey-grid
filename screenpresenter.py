@@ -10,6 +10,8 @@ from grid import Grid
 from griddetail import GridDetail
 from hellogl import GLWidget
 
+from colors import rgb
+
 class ScreenPresenter(object):
     def __init__(self, view, uistack, widget):
         f = QFont('FreeMono')
@@ -35,17 +37,7 @@ class ScreenPresenter(object):
         while prev is not None:
             self.grids.insert(0, prev)
             prev = prev.prev
-        self.colors = [{}]
-        for f in self.grids[0].faces:
-            self.colors[-1][f] = tuple(3 * [0.5 * random() + 0.25])
-        for g in self.grids[1:]:
-            self.colors.append({})
-            for f in g.faces:
-                if f in g.prev.faces:
-                    self.colors[-1][f] = self.colors[-2][f]
-                else:
-                    cs = [self.colors[-2][n][0] for n in g.prev.vertices[f] if n in self.colors[-2]]
-                    self.colors[-1][f] = tuple(3 * [sum(cs)/len(cs) + 0.125 * random() - 0.0675])
+        self.colors = [rgb.Provider() for g in self.grids]
 
         self._views = [GLWidget(self.grids[-1], self.colors, offset, view) for offset in (0, 180)]
         for v in self._views:
