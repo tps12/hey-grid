@@ -10,7 +10,9 @@ from grid import Grid
 from griddetail import GridDetail
 from hellogl import GLWidget
 
-from colors import rgb
+from colors import gray, rgb
+
+providers = sorted([m.Provider() for m in gray, rgb], key=lambda p: p.name)
 
 class ScreenPresenter(object):
     def __init__(self, view, uistack, widget):
@@ -37,14 +39,17 @@ class ScreenPresenter(object):
         while prev is not None:
             self.grids.insert(0, prev)
             prev = prev.prev
-        self.colors = [rgb.Provider() for g in self.grids]
 
-        self._views = [GLWidget(self.grids[-1], self.colors, offset, view) for offset in (0, 180)]
-        for v in self._views:
-            view.angles.addWidget(v)
+        self._view = view
+
+        for p in providers:
+            view.colors.addItem(p.name)
+        view.colors.currentIndexChanged.connect(self.colorchange)
 
         self._detailview = view.detail
         self._detailview.scale(10, 10)
+
+        self.colorchange(0)
 
         view.layer.sliderMoved.connect(self.layer)
         view.detailLayer.sliderMoved.connect(self.detaillayer)
@@ -94,6 +99,17 @@ class ScreenPresenter(object):
             for v in self._views:
                 v.update()
                 v.redraw()
+
+    def colorchange(self, index):
+        self.colors = [providers[index] for _ in self.grids]
+
+        while self._view.angles.count() > 0:
+            self._view.angles.takeAt(0).widget().deleteLater()
+        self._views = [GLWidget(self.grids[-1], self.colors, offset, self._view) for offset in (0, 180)]
+        for widget in self._views:
+            self._view.angles.addWidget(widget)
+
+        self.detaillayer(self._view.detailLayer.value())
 
     def layer(self, depth):
         for v in self._views:
