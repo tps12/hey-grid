@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from PySide.QtGui import QGraphicsScene
+from PySide.QtGui import QFont, QFontDatabase, QGraphicsScene
 
 from hexgrid import HexGrid
 from legend import Legend
@@ -22,9 +22,12 @@ class GridDetail(object):
         # default to arbitrarily chosen local North edge
         self._orientation = (S, tuple(sorted(grid.faces[center][0:2]))) if orientation is None else orientation
 
+        font = QFont(QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont('FreeMono.otf'))[0])
+        font.setPointSize(14)
+
         poimark = u'★'
-        hexgrid = HexGrid(self.scene, self.grid, self.colors, self._center, self._orientation, (poilocation, poimark))
-        legend = Legend(self.scene, (hexgrid.poidirection, poilabel, poimark), scale)
+        hexgrid = HexGrid(self.scene, self.grid, self.colors, self._center, self._orientation, font, (poilocation, poimark))
+        legend = Legend(self.scene, font, (hexgrid.poidirection, poilabel, poimark), scale)
 
         self._groups = [obj.group for obj in hexgrid, legend]
         gridsize, legendsize = [group.boundingRect() for group in self._groups]
