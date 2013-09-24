@@ -125,6 +125,9 @@ class GLWidget(QtOpenGL.QGLWidget):
 		self.updateGL()
 
 	def paintGL(self):
+		if 'glCheckFramebufferStatus' in GL.__dict__:
+			if GL.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER) != GL.GL_FRAMEBUFFER_COMPLETE:
+				return
 		GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 		GL.glLoadIdentity()
 		GL.glLightfv(GL.GL_LIGHT0, GL.GL_POSITION, (20, -10, -20, 0))
