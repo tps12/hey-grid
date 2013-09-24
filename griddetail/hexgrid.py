@@ -21,16 +21,16 @@ radius = 5
 radiussquared = radius * radius * distancesquared(offsets[0])
 
 class HexGrid(object):
-    def __init__(self, scene, grid, colors, face, orientation, (poilocation, poilabel)):
+    def __init__(self, scene, grid, colors, face, orientation, font, (poilocation, poilabel)):
         faceitems = self._buildgrid(scene, grid, colors, face, *orientation)
 
         items = faceitems.values()
-        items.append(self._addglyph(scene, u'@', faceitems[face]))
+        items.append(self._addglyph(scene, font, u'@', faceitems[face]))
 
         edgelength = abs(acos(dot(*orientation[1])))
         ingrid, item = self._findpointofinterest(faceitems, poilocation, edgelength)
         if ingrid:
-            items.append(self._addglyph(scene, poilabel, item))
+            items.append(self._addglyph(scene, font, poilabel, item))
             self.poidirection = None
         else:
             loc = item.boundingRect().center()
@@ -140,10 +140,10 @@ class HexGrid(object):
         faceitems, pents = self._addhexes(scene, grid, colors, face, direction, edge)
         return self._addpents(scene, colors, faceitems, pents)
 
-    def _addglyph(self, scene, glyph, item):
+    def _addglyph(self, scene, font, glyph, item):
         offset = item.boundingRect().center().toTuple()
-        text = scene.addText(glyph)
-        metrics = QFontMetrics(text.font())
+        text = scene.addText(glyph, font)
+        metrics = QFontMetrics(font)
         text.translate(offset[0] - metrics.width(glyph) * 0.2, offset[1] - metrics.height() * 0.2)
         text.scale(0.2, 0.2)
         return text

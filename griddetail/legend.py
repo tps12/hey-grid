@@ -7,28 +7,27 @@ from PySide.QtGui import QColor, QFontMetrics, QPen
 from common import N, NW, NE, S, SE, SW, offsets
 
 class Legend(object):
-    def __init__(self, scene, poiinfo, scaleinfo):
-        poi = self._labelpointofinterest(scene, *poiinfo)
+    def __init__(self, scene, font, poiinfo, scaleinfo):
+        poi = self._labelpointofinterest(scene, font, *poiinfo)
         offset = max([item.boundingRect().height() for item in poi])
-        scale = self._labelscale(scene, offset, *scaleinfo)
+        scale = self._labelscale(scene, font, offset, *scaleinfo)
 
         self.group = scene.createItemGroup(poi + scale)
 
-    def _labelpointofinterest(self, scene, poidirection, poilabel, poimark):
-        label = self._addtext(scene, poilabel + u' ', (0, 0), 0)
+    def _labelpointofinterest(self, scene, font, poidirection, poilabel, poimark):
+        label = self._addtext(scene, font, poilabel + u' ', (0, 0), 0)
         if poidirection is None:
             poidirection = 0
         else:
             poimark = u'↑'
-        key = self._addtext(scene, poimark, (label.boundingRect().width() * 0.2, 0), poidirection)
+        key = self._addtext(scene, font, poimark, (label.boundingRect().width() * 0.2, 0), poidirection)
         return [label, key]
 
     def _color(self):
         return QColor(255, 255, 255)
 
-    def _labelscale(self, scene, offset, scalelen, label1, label10):
-        text = self._addtext(scene, label1, (0, offset * 0.2), 0)
-        metrics = QFontMetrics(text.font())
+    def _labelscale(self, scene, font, offset, scalelen, label1, label10):
+        metrics = QFontMetrics(font)
 
         pen = QPen(self._color())
         y = offset * 0.2
@@ -43,7 +42,8 @@ class Legend(object):
         lines.append(scene.addLine(w, y + h, 10 * w, y + h, pen))
         lines.append(scene.addLine(10 * w, y + h, 10 * w, y, pen))
 
-        text10 = self._addtext(scene, label10, (0, offset * 0.2), 0)
+        text = self._addtext(scene, font, label1, (0, offset * 0.2), 0)
+        text10 = self._addtext(scene, font, label10, (0, offset * 0.2), 0)
 
         x1 = 5 * w - metrics.width(label1) * 0.1
         x10 = 50 * w - metrics.width(label10) * 0.1
@@ -57,10 +57,10 @@ class Legend(object):
 
         return [text, text10] + lines
 
-    def _addtext(self, scene, content, offset, rotation):
-        text = scene.addText(content)
+    def _addtext(self, scene, font, content, offset, rotation):
+        text = scene.addText(content, font)
         text.setDefaultTextColor(self._color())
-        metrics = QFontMetrics(text.font())
+        metrics = QFontMetrics(font)
         text.translate(offset[0] - 2, offset[1] - sqrt(3)/2 - metrics.height() * 0.1)
         text.scale(0.2, 0.2)
         text.setTransformOriginPoint(*text.boundingRect().center().toTuple())
