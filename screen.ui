@@ -27,13 +27,23 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QGridLayout" name="gridLayout_4" columnstretch="0,0,0,0,0">
+    <layout class="QGridLayout" name="gridLayout_4" columnstretch="0,0,0,0,0,0,0">
      <property name="topMargin">
       <number>0</number>
      </property>
      <property name="rightMargin">
       <number>0</number>
      </property>
+     <property name="horizontalSpacing">
+      <number>-1</number>
+     </property>
+     <item row="0" column="6">
+      <widget class="QCheckBox" name="lazy">
+       <property name="text">
+        <string>Lazy</string>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="4">
       <widget class="QPushButton" name="add">
        <property name="text">
@@ -72,6 +82,22 @@
        <property name="sizeHint" stdset="0">
         <size>
          <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="0" column="5">
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>10</width>
          <height>20</height>
         </size>
        </property>

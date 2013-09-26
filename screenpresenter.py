@@ -115,7 +115,11 @@ class ScreenPresenter(object):
 
     def add(self):
         self.grids.append(Grid(self.grids[-1]))
-        self.grids[-1].populate(self.grids[-1].prev.faces.keys()[3])
+        if self._view.lazy.isChecked():
+            self._view.lazy.setEnabled(False)
+            self.grids[-1].populate(self.grids[-1].prev.faces.keys()[3])
+        else:
+            self.grids[-1].populate()
         self.colorchange(providers.index(self.colors[0]))
 
         for l in self._view.layer, self._view.detailLayer:
