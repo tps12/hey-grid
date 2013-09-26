@@ -20,25 +20,8 @@ class ScreenPresenter(object):
         f.setWeight(QFont.Black)
         f.setPixelSize(16)
 
-        grid = Grid()
-        while grid.size < 3:
-            subgrid = Grid(grid)
-            subgrid.populate()
-            grid = subgrid
-        p = grid.faces.keys()[12]
-        subgrid = Grid(grid)
-        subgrid.populate(p)
-        grid = subgrid
-        while grid.size < 7:
-            subgrid = Grid(grid)
-            subgrid.populate(grid.faces.keys()[3])
-            grid = subgrid
-
         self.grids = []
-        prev = grid
-        while prev is not None:
-            self.grids.insert(0, prev)
-            prev = prev.prev
+        self.colors = []
 
         self._view = view
 
@@ -49,7 +32,7 @@ class ScreenPresenter(object):
         self._detailview = view.detail
         self._detailview.scale(10, 10)
 
-        self.colorchange(0)
+        self.add()
 
         view.layer.sliderMoved.connect(self.layer)
         view.detailLayer.sliderMoved.connect(self.detaillayer)
@@ -59,10 +42,6 @@ class ScreenPresenter(object):
         self._view.add.pressed.connect(self.add)
 
         widget.keyPressEvent = self.key
-
-        for l in view.layer, view.detailLayer:
-            l.setMaximum(grid.size)
-            l.setValue(grid.size)
 
         view.rotation.valueChanged.connect(self.rotate)
 
@@ -114,13 +93,14 @@ class ScreenPresenter(object):
         self.detaillayer(self._view.detailLayer.value())
 
     def add(self):
-        self.grids.append(Grid(self.grids[-1]))
-        if self._view.lazy.isChecked():
-            self._view.lazy.setEnabled(False)
-            self.grids[-1].populate(self.grids[-1].prev.faces.keys()[3])
-        else:
-            self.grids[-1].populate()
-        self.colorchange(providers.index(self.colors[0]))
+        self.grids.append(Grid(self.grids[-1]) if len(self.grids) > 0 else Grid())
+        if self.grids[-1].prev is not None:
+            if self._view.lazy.isChecked():
+                self._view.lazy.setEnabled(False)
+                self.grids[-1].populate(self.grids[-1].prev.faces.keys()[3])
+            else:
+                self.grids[-1].populate()
+        self.colorchange(providers.index(self.colors[0]) if len(self.colors) > 0 else 0)
 
         for l in self._view.layer, self._view.detailLayer:
             l.setMaximum(self.grids[-1].size)
