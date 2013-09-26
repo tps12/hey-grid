@@ -68,13 +68,14 @@ def normal(v):
 	return tuple([vi * d for vi in v])
 
 class GLWidget(QtOpenGL.QGLWidget):
-	def __init__(self, grid, colors, rotationoffset, parent=None):
+	def __init__(self, grid, colors, rotationoffset, parent, index):
 		QtOpenGL.QGLWidget.__init__(self, parent)
 
 		self.grid = grid
 		self.colors = colors
 		self._rotationoffset = rotationoffset
 		self.objects = []
+		self.index = index
 		self.xRot = 0
 		self.yRot = self._rotationoffset * 16
 		self.zRot = 0
@@ -105,7 +106,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 		self.qglClearColor(self.trolltechPurple.darker())
 		self.objects = [None for _ in range(self.grid.size + 1)]
 		self.update()
-		self.index = -1
 		GL.glShadeModel(GL.GL_SMOOTH)
 		#GL.glEnable(GL.GL_DEPTH_TEST)
 		GL.glEnable(GL.GL_CULL_FACE)

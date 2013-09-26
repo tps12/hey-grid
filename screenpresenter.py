@@ -86,7 +86,7 @@ class ScreenPresenter(object):
 
         while self._view.angles.count() > 0:
             self._view.angles.takeAt(0).widget().deleteLater()
-        self._views = [GLWidget(self.grids[-1], self.colors, offset, self._view) for offset in (0, 180)]
+        self._views = [GLWidget(self.grids[-1], self.colors, offset, self._view, self._view.layer.value()) for offset in (0, 180)]
         for widget in self._views:
             self._view.angles.addWidget(widget)
 
@@ -100,11 +100,13 @@ class ScreenPresenter(object):
                 self.grids[-1].populate(self.grids[-1].prev.faces.keys()[3])
             else:
                 self.grids[-1].populate()
-        self.colorchange(providers.index(self.colors[0]) if len(self.colors) > 0 else 0)
 
         for l in self._view.layer, self._view.detailLayer:
             l.setMaximum(self.grids[-1].size)
-            l.setValue(self.grids[-1].size)
+            if l.value() == self.grids[-1].size - 1:
+                l.setValue(self.grids[-1].size)
+
+        self.colorchange(providers.index(self.colors[0]) if len(self.colors) > 0 else 0)
 
     def layer(self, depth):
         for v in self._views:
