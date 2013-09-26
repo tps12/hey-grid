@@ -73,7 +73,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QGridLayout" name="gridLayout_2" rowstretch="1,0,1,0,0">
+    <layout class="QGridLayout" name="gridLayout_2" rowstretch="1,0,1">
      <property name="topMargin">
       <number>0</number>
      </property>
@@ -147,7 +147,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QLCDNumber" name="lcdNumber_2"/>
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>0</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -225,7 +229,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QLCDNumber" name="lcdNumber"/>
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>0</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -270,33 +278,33 @@
  <connections>
   <connection>
    <sender>layer</sender>
-   <signal>sliderMoved(int)</signal>
-   <receiver>lcdNumber</receiver>
-   <slot>display(int)</slot>
+   <signal>valueChanged(int)</signal>
+   <receiver>label_4</receiver>
+   <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>32</x>
-     <y>102</y>
+     <x>625</x>
+     <y>117</y>
     </hint>
     <hint type="destinationlabel">
-     <x>100</x>
+     <x>666</x>
      <y>226</y>
     </hint>
    </hints>
   </connection>
   <connection>
    <sender>detailLayer</sender>
-   <signal>sliderMoved(int)</signal>
-   <receiver>lcdNumber_2</receiver>
-   <slot>display(int)</slot>
+   <signal>valueChanged(int)</signal>
+   <receiver>label_5</receiver>
+   <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>570</x>
-     <y>364</y>
+     <x>625</x>
+     <y>374</y>
     </hint>
     <hint type="destinationlabel">
-     <x>638</x>
-     <y>480</y>
+     <x>666</x>
+     <y>483</y>
     </hint>
    </hints>
   </connection>
