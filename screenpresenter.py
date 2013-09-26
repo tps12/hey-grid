@@ -56,6 +56,8 @@ class ScreenPresenter(object):
 
         self.detaillayer(-1)
 
+        self._view.add.pressed.connect(self.add)
+
         def detailevent(event):
             if (isinstance(event, QKeyEvent) and
                     event.text() == u'\t' and
@@ -125,6 +127,15 @@ class ScreenPresenter(object):
             self._view.angles.addWidget(widget)
 
         self.detaillayer(self._view.detailLayer.value())
+
+    def add(self):
+        self.grids.append(Grid(self.grids[-1]))
+        self.grids[-1].populate(self.grids[-1].prev.faces.keys()[3])
+        self.colorchange(providers.index(self.colors[0]))
+
+        for l in self._view.layer, self._view.detailLayer:
+            l.setMaximum(self.grids[-1].size)
+            l.setValue(self.grids[-1].size)
 
     def layer(self, depth):
         for v in self._views:
