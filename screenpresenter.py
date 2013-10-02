@@ -4,7 +4,7 @@ from math import log10, sqrt
 from random import randint, random
 
 from PySide.QtCore import QEvent, QPointF
-from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QKeyEvent, QPen, QPolygonF, QWidget
+from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QKeyEvent, QPen, QPolygonF, QWidget, QWidgetItem
 
 from grid import Grid
 from griddetail import GridDetail
@@ -62,7 +62,29 @@ class ScreenPresenter(object):
 
         view.layer.setValue(view.layer.maximum())
 
+        self._view.showDetail.pressed.connect(self.showdetail)
+        self._view.hideDetail.pressed.connect(self.hidedetail)
+        self.hidedetail()
+
         self._uistack = uistack
+
+    def hidedetail(self):
+        for i in range(self._view.grid.count()):
+            item = self._view.grid.itemAt(i)
+            if isinstance(item, QWidgetItem) and item.widget() is self._view.detailPanel:
+                self._detailWidget = item.widget()
+                self._detailPosition = self._view.grid.getItemPosition(i)
+                self._detailWidget.setParent(None)
+                break
+        self._view.grid.setRowStretch(self._detailPosition[0], 0)
+        self._view.hideDetail.setVisible(False)
+        self._view.showDetail.setVisible(True)
+
+    def showdetail(self):
+        self._view.showDetail.setVisible(False)
+        self._view.grid.addWidget(self._detailWidget, *self._detailPosition)
+        self._view.grid.setRowStretch(self._detailPosition[0], 1)
+        self._view.hideDetail.setVisible(True)
 
     def key(self, event):
         facecount = len(self._detail.grid.faces)
