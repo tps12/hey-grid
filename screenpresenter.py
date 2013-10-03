@@ -10,9 +10,9 @@ from grid import Grid
 from griddetail import GridDetail
 from hellogl import GLWidget
 
-from colors import earth, gray, rgb
+from colors import earth, gray, rgb, simplex
 
-providers = sorted([m.Provider() for m in earth, gray, rgb], key=lambda p: p.name)
+providers = sorted([m.Provider() for m in earth, gray, rgb, simplex], key=lambda p: p.name)
 
 class ScreenPresenter(object):
     def __init__(self, view, uistack, widget):
