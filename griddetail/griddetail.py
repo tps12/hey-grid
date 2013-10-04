@@ -34,6 +34,10 @@ class GridDetail(object):
         self._groups[-1].translate(gridsize.x() - legendsize.width()/2, gridsize.y() + gridsize.height() + legendsize.height()/2)
         self._groups[-1].setZValue(1)
 
+    @property
+    def center(self):
+        return self._center
+
     def move(self, direction):
         orientation = self._orientation
         for nextdir, border in borders(self.grid, self._center, *orientation):
