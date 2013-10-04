@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from math import log10, sqrt
-from random import randint, random
+from random import choice
 
 from PySide.QtCore import QEvent, QPointF
 from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QKeyEvent, QPen, QPolygonF, QWidget, QWidgetItem
@@ -32,12 +32,12 @@ class ScreenPresenter(object):
         self._detailview = view.detail
         self._detailview.scale(10, 10)
 
+        self._lastdepth = -1
+        self._detail = None
         self.add()
 
         view.layer.sliderMoved.connect(self.layer)
         view.detailLayer.sliderMoved.connect(self.detaillayer)
-
-        self.detaillayer(-1)
 
         self._view.add.pressed.connect(self.add)
 
@@ -181,8 +181,20 @@ class ScreenPresenter(object):
         return dth, label1, label10
 
     def detaillayer(self, depth):
-        self._detail = GridDetail(self.grids[depth], self.colors[depth], self.grids[depth].faces.keys()[0], ((0,-1,0), u'N'), self.scale(self.grids[depth], 6371000, u'm'))
+        if self._detail is None:
+            face = self.grids[depth].faces.keys()[0]
+        else:
+            face = self._detail.center
+            lastdepth = self._lastdepth
+            while lastdepth > depth:
+                lastdepth -= 1
+                if face not in self.grids[lastdepth].faces:
+                    face = choice(list(self.grids[lastdepth].vertices[face]))
+            if face not in self.grids[depth].faces:
+                self.grids[depth].populate(face)
+        self._detail = GridDetail(self.grids[depth], self.colors[depth], face, ((0,-1,0), u'N'), self.scale(self.grids[depth], 6371000, u'm'))
         self._detailview.setScene(self._detail.scene)
+        self._lastdepth = depth
 
     def rotate(self, value):
         for v in self._views:
