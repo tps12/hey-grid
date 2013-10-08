@@ -35,6 +35,10 @@ class GridDetail(object):
         self._groups[-1].setZValue(1)
 
     @property
+    def orientation(self):
+        return self._orientation
+
+    @property
     def center(self):
         return self._center
 
