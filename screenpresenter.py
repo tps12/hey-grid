@@ -1,18 +1,21 @@
 # coding: utf-8
 
-from math import log10, sqrt
+from math import acos, log10
 from random import choice
 
 from PySide.QtCore import QPointF
 from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QPen, QPolygonF, QWidgetItem
 
-from grid import Grid
+from grid import dot, normal, Grid
 from griddetail import GridDetail
 from hellogl import GLWidget
 
 from colors import earth, gray, rgb, simplex
 
 providers = sorted([m.Provider() for m in earth, gray, rgb, simplex], key=lambda p: p.name)
+
+def mid(v1, v2):
+    return normal([(v1[i]+v2[i])/2 for i in range(3)])
 
 class ScreenPresenter(object):
     def __init__(self, view, uistack, widget):
@@ -168,6 +171,7 @@ class ScreenPresenter(object):
     def detaillayer(self, depth):
         if self._detail is None:
             face = self.grids[depth].faces.keys()[0]
+            orientation = None
         else:
             face = self._detail.center
             lastdepth = self._lastdepth
@@ -175,7 +179,11 @@ class ScreenPresenter(object):
                 lastdepth -= 1
                 if face not in self.grids[lastdepth].faces:
                     face = choice(list(self.grids[lastdepth].vertices[face]))
-        self._detail = GridDetail(self.grids[depth], self.colors[depth], face, ((0,-1,0), u'N'), self.scale(self.grids[depth], 6371000, u'm'))
+            direction, edge = self._detail.orientation
+            edgemid = mid(*edge)
+            edge = min(self.grids[depth].edges(face), key=lambda e: abs(acos(dot(edgemid, mid(*e)))))
+            orientation = (direction, edge)
+        self._detail = GridDetail(self.grids[depth], self.colors[depth], face, ((0,-1,0), u'N'), self.scale(self.grids[depth], 6371000, u'm'), orientation)
         self._detailview.setScene(self._detail.scene)
         self._lastdepth = depth
 
