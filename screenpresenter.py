@@ -54,6 +54,8 @@ class ScreenPresenter(object):
         self._view.hideDetail.pressed.connect(self.hidedetail)
         self.hidedetail()
 
+        self._view.pentagon.pressed.connect(self.pentagon)
+
         self._uistack = uistack
 
     def hidedetail(self):
@@ -188,6 +190,14 @@ class ScreenPresenter(object):
         self._detail = GridDetail(self.grids[depth], self.colors[depth], face, ((0,-1,0), u'N'), self.scale(self.grids[depth], 6371000, u'm'), orientation)
         self._detailview.setScene(self._detail.scene)
         self._lastdepth = depth
+
+    def pentagon(self):
+        face = min(self.grids[0].faces.keys(), key=lambda f: abs(acos(dot(f, self._detail.center))))
+        depth = self._lastdepth
+        if face not in self.grids[depth].faces:
+            self.grids[depth].populate(face)
+        self._detail = GridDetail(self.grids[depth], self.colors[depth], face, ((0,-1,0), u'N'), self.scale(self.grids[depth], 6371000, u'm'))
+        self._detailview.setScene(self._detail.scene)
 
     def rotate(self, value):
         for v in self._views:

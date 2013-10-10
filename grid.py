@@ -108,6 +108,9 @@ class Grid(object):
         if previousface in self.faces:
             return
 
+        if previousface not in self.prev.faces:
+            self.prev.populate(previousface)
+
         for vertex in self.prev.faces[previousface]:
             if len(self.prev.vertices[vertex]) < 3:
                 # implies p was new in prev

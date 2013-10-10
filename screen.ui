@@ -324,6 +324,13 @@
             </item>
            </layout>
           </item>
+          <item>
+           <widget class="QPushButton" name="pentagon">
+            <property name="text">
+             <string>⬟</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
        </layout>
