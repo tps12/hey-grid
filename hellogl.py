@@ -16,7 +16,7 @@ def normal(v):
 	d = 1.0 / length(v)
 	return tuple([vi * d for vi in v])
 
-class GLWidget(QtOpenGL.QGLWidget):
+class SphereView(QtOpenGL.QGLWidget):
 	def __init__(self, grid, colors, rotationoffset, parent, index):
 		QtOpenGL.QGLWidget.__init__(self, parent)
 

@@ -7,7 +7,7 @@ from PySide.QtGui import QFont, QWidgetItem
 
 from grid import dot, normal, Grid
 from griddetail import GridDetail
-from hellogl import GLWidget
+from hellogl import SphereView
 
 from colors import earth, gray, rgb, simplex
 
@@ -112,7 +112,7 @@ class ScreenPresenter(object):
 
         while self._view.angles.count() > 0:
             self._view.angles.takeAt(0).widget().deleteLater()
-        self._views = [GLWidget(self.grids[-1], self.colors, offset, self._view, self._view.layer.value()) for offset in (0, 180)]
+        self._views = [SphereView(self.grids[-1], self.colors, offset, self._view, self._view.layer.value()) for offset in (0, 180)]
         for widget in self._views:
             self._view.angles.addWidget(widget)
 
