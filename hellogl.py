@@ -5,47 +5,7 @@
 import sys
 import math
 from OpenGL import GL
-from PySide import QtCore, QtGui, QtOpenGL
-
-class Window(QtGui.QWidget):
-	def __init__(self, parent=None):
-		QtGui.QWidget.__init__(self, parent)
-
-		self.glWidget = GLWidget()
-
-		self.xSlider = self.createSlider(QtCore.SIGNAL("xRotationChanged(int)"),
-										 self.glWidget.setXRotation)
-		self.ySlider = self.createSlider(QtCore.SIGNAL("yRotationChanged(int)"),
-										 self.glWidget.setYRotation)
-		self.zSlider = self.createSlider(QtCore.SIGNAL("zRotationChanged(int)"),
-										 self.glWidget.setZRotation)
-
-		mainLayout = QtGui.QHBoxLayout()
-		mainLayout.addWidget(self.glWidget)
-		mainLayout.addWidget(self.xSlider)
-		mainLayout.addWidget(self.ySlider)
-		mainLayout.addWidget(self.zSlider)
-		self.setLayout(mainLayout)
-
-		self.xSlider.setValue(15 * 16)
-		self.ySlider.setValue(345 * 16)
-		self.zSlider.setValue(0 * 16)
-
-		self.setWindowTitle(self.tr("Hello GL"))
-
-	def createSlider(self, changedSignal, setterSlot):
-		slider = QtGui.QSlider(QtCore.Qt.Vertical)
-
-		slider.setRange(0, 360 * 16)
-		slider.setSingleStep(16)
-		slider.setPageStep(15 * 16)
-		slider.setTickInterval(15 * 16)
-		slider.setTickPosition(QtGui.QSlider.TicksRight)
-
-		self.glWidget.connect(slider, QtCore.SIGNAL("valueChanged(int)"), setterSlot)
-		self.connect(self.glWidget, changedSignal, slider, QtCore.SLOT("setValue(int)"))
-
-		return slider
+from PySide import QtCore, QtOpenGL
 
 def squared_length(v):
 	return sum([vi * vi for vi in v])
@@ -238,10 +198,3 @@ class GLWidget(QtOpenGL.QGLWidget):
 		while angle > 360 * 16:
 			angle -= 360 * 16
 		return angle
-
-
-if __name__ == '__main__':
-	app = QtGui.QApplication(sys.argv)
-	window = Window()
-	window.show()
-	sys.exit(app.exec_())
