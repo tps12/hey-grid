@@ -8,7 +8,7 @@ from PySide.QtGui import QFont, QKeyEvent, QWidget, QWidgetItem
 
 from grid import dot, normal, Grid
 from griddetail import GridDetail
-from hellogl import SphereView
+from sphereview import SphereView
 
 from colors import earth, gray, rgb, simplex
 
