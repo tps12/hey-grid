@@ -3,8 +3,7 @@
 from math import acos, log10
 from random import choice
 
-from PySide.QtCore import QPointF
-from PySide.QtGui import QBrush, QColor, QFont, QGraphicsScene, QPen, QPolygonF, QWidgetItem
+from PySide.QtGui import QFont, QWidgetItem
 
 from grid import dot, normal, Grid
 from griddetail import GridDetail

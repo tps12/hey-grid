@@ -5,7 +5,7 @@ from PySide.QtGui import QFont, QFontDatabase, QGraphicsScene
 from hexgrid import HexGrid
 from legend import Legend
 
-from common import N, NW, NE, S, SE, SW, dirs, borders, rotatedirection
+from common import N, NW, NE, S, SE, SW, dirs, borders
 
 class GridDetail(object):
     def __init__(self, grid, colors, center, (poilocation, poilabel), scale, orientation=None):
