@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-"""PySide port of the opengl/hellogl example from Qt v4.x"""
-
 import math
 from OpenGL import GL
 from PySide import QtCore, QtOpenGL
